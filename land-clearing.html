@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Land Clearing Estimator — Trailblazers Outdoor Solutions</title>
+<style>
+  :root {
+    --green-dark: #1B5E20;
+    --green-mid: #2E7D32;
+    --green-bright: #43A047;
+    --green-light: #E8F5E9;
+    --green-pale: #F1F8F1;
+    --text-primary: #1a1a1a;
+    --text-secondary: #555;
+    --text-muted: #888;
+    --border: #ddd;
+    --border-light: #eee;
+    --white: #fff;
+    --warn-bg: #FFF8E1;
+    --warn-text: #5D4037;
+    --warn-border: #FFB300;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f5f5f5;
+    color: var(--text-primary);
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--green-dark);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-circle {
+    width: 38px; height: 38px;
+    background: var(--white);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  header h1 {
+    color: var(--white);
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  header p {
+    color: rgba(255,255,255,0.7);
+    font-size: 11px;
+    margin-top: 1px;
+  }
+
+  .main { max-width: 560px; margin: 0 auto; padding: 16px; }
+
+  .card {
+    background: var(--white);
+    border-radius: 12px;
+    border: 1px solid var(--border-light);
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+
+  .card-head {
+    padding: 12px 16px 10px;
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-head .step {
+    width: 22px; height: 22px;
+    background: var(--green-dark);
+    color: var(--white);
+    border-radius: 50%;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .card-head h2 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .card-body { padding: 14px 16px; }
+
+  .acres-display {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--green-dark);
+    text-align: center;
+    margin-bottom: 10px;
+    letter-spacing: -1px;
+  }
+
+  .acres-display span {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-left: 4px;
+  }
+
+  input[type=range] {
+    width: 100%;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--border);
+    border-radius: 3px;
+    outline: none;
+    margin-bottom: 6px;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 24px; height: 24px;
+    background: var(--green-dark);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid var(--white);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+
+  .range-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .opt-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .opt-btn {
+    padding: 11px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: var(--white);
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .opt-btn:active { transform: scale(0.97); }
+
+  .opt-btn.selected {
+    border-color: var(--green-dark);
+    background: var(--green-light);
+  }
+
+  .opt-btn .t { font-size: 13px; font-weight: 600; color: var(--text-primary); display: block; }
+  .opt-btn .s { font-size: 11px; color: var(--text-muted); margin-top: 2px; display: block; }
+  .opt-btn.selected .t { color: var(--green-dark); }
+  .opt-btn.selected .s { color: var(--green-mid); }
+
+  .addon-list { }
+
+  .addon-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .addon-row:last-child { border-bottom: none; }
+
+  .addon-text .t { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+  .addon-text .s { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  .toggle {
+    position: relative;
+    width: 44px; height: 24px;
+    flex-shrink: 0;
+  }
+
+  .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+
+  .track {
+    position: absolute; inset: 0;
+    background: #ccc;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .toggle input:checked + .track { background: var(--green-dark); }
+
+  .track:before {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    left: 3px; top: 3px;
+    background: var(--white);
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+
+  .toggle input:checked + .track:before { transform: translateX(20px); }
+
+  .result-card {
+    background: var(--green-dark);
+    border-radius: 12px;
+    padding: 20px 16px;
+    margin-bottom: 12px;
+  }
+
+  .result-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 4px;
+  }
+
+  .result-price {
+    font-size: 44px;
+    font-weight: 800;
+    color: var(--white);
+    letter-spacing: -2px;
+    line-height: 1;
+    margin-bottom: 16px;
+  }
+
+  .result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .result-stat {
+    background: rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 8px 10px;
+  }
+
+  .result-stat .v {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--white);
+  }
+
+  .result-stat .l {
+    font-size: 10px;
+    color: rgba(255,255,255,0.6);
+    margin-top: 2px;
+  }
+
+  .floor-row {
+    background: rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .floor-row .l { font-size: 12px; color: rgba(255,255,255,0.6); }
+  .floor-row .v { font-size: 16px; font-weight: 700; color: rgba(255,255,255,0.85); }
+
+  .breakdown-box {
+    background: rgba(0,0,0,0.15);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+  }
+
+  .breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+    padding: 3px 0;
+  }
+
+  .breakdown-row.total {
+    border-top: 1px solid rgba(255,255,255,0.2);
+    margin-top: 4px;
+    padding-top: 7px;
+    font-weight: 600;
+    color: var(--white);
+    font-size: 13px;
+  }
+
+  .warn-box {
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--warn-text);
+    line-height: 1.5;
+    margin-bottom: 12px;
+    display: none;
+  }
+
+  .warn-box.show { display: block; }
+
+  .copy-btn {
+    width: 100%;
+    padding: 15px;
+    background: var(--white);
+    border: 2px solid var(--green-dark);
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--green-dark);
+    cursor: pointer;
+    margin-bottom: 8px;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .copy-btn:active { background: var(--green-light); transform: scale(0.98); }
+  .copy-btn.copied { background: var(--green-dark); color: var(--white); }
+
+  .jobber-btn {
+    width: 100%;
+    padding: 15px;
+    background: var(--green-dark);
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--white);
+    cursor: pointer;
+    margin-bottom: 8px;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .jobber-btn:active { background: var(--green-mid); transform: scale(0.98); }
+
+  .reset-btn {
+    width: 100%;
+    padding: 11px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 13px;
+    color: var(--text-muted);
+    cursor: pointer;
+    margin-bottom: 20px;
+  }
+
+  .tagline {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    padding-bottom: 24px;
+    font-style: italic;
+  }
+
+  .copied-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--green-dark);
+    color: var(--white);
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: 999;
+    white-space: nowrap;
+  }
+
+  .copied-toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-circle">🦁</div>
+  <div>
+    <h1>Land Clearing Estimator</h1>
+    <p>Trailblazers Outdoor Solutions — Field Tool</p>
+  </div>
+</header>
+
+<div class="main">
+
+  <div class="card">
+    <div class="card-head">
+      <div class="step">1</div>
+      <h2>Job size</h2>
+    </div>
+    <div class="card-body">
+      <div class="acres-display" id="acres-display">1<span>acre</span></div>
+      <input type="range" id="acres" min="0.25" max="5" step="0.25" value="1">
+      <div class="range-labels"><span>¼ ac</span><span>1 ac</span><span>2 ac</span><span>3 ac</span><span>5 ac</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div class="step">2</div>
+      <h2>Vegetation density</h2>
+    </div>
+    <div class="card-body">
+      <div class="opt-grid">
+        <button class="opt-btn" data-group="veg" data-val="light" onclick="pick(this)">
+          <span class="t">Light brush</span>
+          <span class="s">Grass, weeds, scrub</span>
+        </button>
+        <button class="opt-btn selected" data-group="veg" data-val="medium" onclick="pick(this)">
+          <span class="t">Medium</span>
+          <span class="s">Buckthorn, small trees</span>
+        </button>
+        <button class="opt-btn" data-group="veg" data-val="heavy" onclick="pick(this)">
+          <span class="t">Heavy</span>
+          <span class="s">Dense buckthorn + ash</span>
+        </button>
+        <button class="opt-btn" data-group="veg" data-val="timber" onclick="pick(this)">
+          <span class="t">Timber</span>
+          <span class="s">Large trees, hardwood</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div class="step">3</div>
+      <h2>Material disposal</h2>
+    </div>
+    <div class="card-body">
+      <div class="opt-grid">
+        <button class="opt-btn selected" data-group="disposal" data-val="haul" onclick="pick(this)">
+          <span class="t">Haul off site</span>
+          <span class="s">Full removal, clean site</span>
+        </button>
+        <button class="opt-btn" data-group="disposal" data-val="pile" onclick="pick(this)">
+          <span class="t">Pile on site</span>
+          <span class="s">Customer handles disposal</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div class="step">4</div>
+      <h2>Add-ons</h2>
+    </div>
+    <div class="card-body addon-list">
+      <div class="addon-row">
+        <div class="addon-text">
+          <div class="t">Stumps included</div>
+          <div class="s">Grind all stumps in clearing area</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="stumps" onchange="calc()"><span class="track"></span></label>
+      </div>
+      <div class="addon-row">
+        <div class="addon-text">
+          <div class="t">Steep or wet terrain</div>
+          <div class="s">+20% for equipment risk</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="terrain" onchange="calc()"><span class="track"></span></label>
+      </div>
+      <div class="addon-row">
+        <div class="addon-text">
+          <div class="t">Same-week scheduling</div>
+          <div class="s">+$500 mobilization premium</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="rush" onchange="calc()"><span class="track"></span></label>
+      </div>
+      <div class="addon-row">
+        <div class="addon-text">
+          <div class="t">Municipality / commercial</div>
+          <div class="s">+15% for COI and compliance</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="commercial" onchange="calc()"><span class="track"></span></label>
+      </div>
+    </div>
+  </div>
+
+  <div class="warn-box" id="warn-box"></div>
+
+  <div class="result-card">
+    <div class="result-label">Quote this price</div>
+    <div class="result-price" id="r-price">—</div>
+    <div class="result-grid">
+      <div class="result-stat">
+        <div class="v" id="r-margin">—</div>
+        <div class="l">Gross margin</div>
+      </div>
+      <div class="result-stat">
+        <div class="v" id="r-hours">—</div>
+        <div class="l">Est. hours</div>
+      </div>
+      <div class="result-stat">
+        <div class="v" id="r-cost">—</div>
+        <div class="l">Your cost</div>
+      </div>
+    </div>
+    <div class="floor-row">
+      <span class="l">Floor — never quote below this</span>
+      <span class="v" id="r-floor">—</span>
+    </div>
+    <div class="breakdown-box" id="r-breakdown"></div>
+  </div>
+
+  <button class="copy-btn" id="copy-btn" onclick="copyQuote()">📋 Copy quote summary</button>
+  <button class="jobber-btn" onclick="openJobber()">Open new estimate in Jobber ↗</button>
+  <button class="reset-btn" onclick="resetAll()">Reset form</button>
+
+  <p class="tagline">No Excuses. No Shortcuts. No Damage. Only Results.</p>
+</div>
+
+<div class="copied-toast" id="toast">Copied to clipboard</div>
+
+<script>
+const SEL = { veg: 'medium', disposal: 'haul' };
+const RATE = 265;
+
+const VEG = {
+  light:  { label: 'Light brush',        hMin: 8,  hMax: 10, mult: 2.4 },
+  medium: { label: 'Medium (buckthorn)',  hMin: 10, hMax: 14, mult: 2.9 },
+  heavy:  { label: 'Heavy + dead ash',   hMin: 12, hMax: 16, mult: 3.5 },
+  timber: { label: 'Timber / hardwood',  hMin: 16, hMax: 22, mult: 4.2 }
+};
+
+function fmt(n) { return '$' + Math.round(n).toLocaleString(); }
+function fmtPct(n) { return Math.round(n) + '%'; }
+
+function pick(btn) {
+  const g = btn.dataset.group;
+  document.querySelectorAll('[data-group="' + g + '"]').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  SEL[g] = btn.dataset.val;
+  calc();
+}
+
+function calc() {
+  const acres = parseFloat(document.getElementById('acres').value);
+  const veg = VEG[SEL.veg];
+  const isHaul = SEL.disposal === 'haul';
+  const stumps = document.getElementById('stumps').checked;
+  const terrain = document.getElementById('terrain').checked;
+  const rush = document.getElementById('rush').checked;
+  const commercial = document.getElementById('commercial').checked;
+
+  const hMin = veg.hMin * acres;
+  const hMax = veg.hMax * acres;
+  const hMid = (hMin + hMax) / 2;
+
+  let baseCost = hMid * RATE;
+  let baseTarget = baseCost * veg.mult;
+  let baseFloor = baseCost * 1.65;
+
+  const haulFactor = isHaul ? 1 : 0.88;
+  baseCost *= haulFactor;
+  baseTarget *= haulFactor;
+  baseFloor *= haulFactor;
+
+  let addons = 0;
+  let addonsForCost = 0;
+  let lines = [];
+
+  lines.push([veg.label + ' — ' + acres + (acres === 1 ? ' acre' : ' acres') + (isHaul ? ', haul-off' : ', pile on site'), fmt(baseTarget)]);
+
+  if (stumps) {
+    const count = Math.round(acres * 3);
+    const sc = count * 110;
+    addons += sc;
+    addonsForCost += sc * 0.5;
+    lines.push(['Stump grinding (~' + count + ' stumps)', fmt(sc)]);
+  }
+  if (terrain) {
+    const ta = baseTarget * 0.20;
+    addons += ta;
+    addonsForCost += ta * 0.4;
+    lines.push(['Steep/wet terrain (+20%)', fmt(ta)]);
+  }
+  if (rush) {
+    addons += 500;
+    addonsForCost += 200;
+    lines.push(['Same-week mobilization', '$500']);
+  }
+  if (commercial) {
+    const ca = baseTarget * 0.15;
+    addons += ca;
+    addonsForCost += ca * 0.4;
+    lines.push(['Commercial/municipality (+15%)', fmt(ca)]);
+  }
+
+  const finalTarget = Math.round(baseTarget + addons);
+  const finalFloor = Math.round(baseFloor + addons * 0.7);
+  const finalCost = Math.round(baseCost + addonsForCost);
+  const margin = Math.round(((finalTarget - finalCost) / finalTarget) * 100);
+
+  document.getElementById('r-price').textContent = fmt(finalTarget);
+  document.getElementById('r-floor').textContent = fmt(finalFloor);
+  document.getElementById('r-margin').textContent = fmtPct(margin);
+  document.getElementById('r-hours').textContent = Math.round(hMin) + '–' + Math.round(hMax) + 'h';
+  document.getElementById('r-cost').textContent = fmt(finalCost);
+
+  let bd = '';
+  lines.forEach(r => {
+    bd += '<div class="breakdown-row"><span>' + r[0] + '</span><span>' + r[1] + '</span></div>';
+  });
+  bd += '<div class="breakdown-row total"><span>Total quote</span><span>' + fmt(finalTarget) + '</span></div>';
+  document.getElementById('r-breakdown').innerHTML = bd;
+
+  const warn = document.getElementById('warn-box');
+  if (acres >= 3 || (acres >= 2 && SEL.veg === 'timber')) {
+    warn.className = 'warn-box show';
+    warn.textContent = acres >= 2 && SEL.veg === 'timber'
+      ? 'Timber job — walk the full property before committing to a flat price. Large hardwood jobs can swing 30%+ on hours. Consider quoting hourly with a cap.'
+      : 'Job over 3 acres — walk the full property. Don\'t quote from the driveway.';
+  } else {
+    warn.className = 'warn-box';
+  }
+
+  window._lastQuote = buildQuoteText(acres, veg, isHaul, lines, finalTarget, finalFloor, finalCost, margin, hMin, hMax);
+}
+
+function buildQuoteText(acres, veg, isHaul, lines, target, floor, cost, margin, hMin, hMax) {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  let txt = 'TRAILBLAZERS OUTDOOR SOLUTIONS\n';
+  txt += 'Land Clearing Estimate — ' + dateStr + '\n';
+  txt += '(651) 280-4156 | trailblazers-ops.com\n';
+  txt += '─────────────────────────────\n\n';
+  txt += 'JOB DETAILS\n';
+  txt += 'Size: ' + acres + (acres === 1 ? ' acre' : ' acres') + '\n';
+  txt += 'Vegetation: ' + veg.label + '\n';
+  txt += 'Disposal: ' + (isHaul ? 'Haul off site' : 'Pile on site') + '\n';
+  txt += 'Est. hours: ' + Math.round(hMin) + '–' + Math.round(hMax) + '\n\n';
+  txt += 'LINE ITEMS\n';
+  lines.forEach(r => { txt += r[0] + ': ' + r[1] + '\n'; });
+  txt += '─────────────────────────────\n';
+  txt += 'QUOTE PRICE: ' + ('$' + Math.round(target).toLocaleString()) + '\n';
+  txt += 'Floor price: ' + ('$' + Math.round(floor).toLocaleString()) + '\n';
+  txt += 'Gross margin: ' + Math.round(margin) + '%\n\n';
+  txt += 'Veterans, first responders, firefighters & police receive a discount.\n';
+  txt += 'No Excuses. No Shortcuts. No Damage. Only Results.\n';
+  return txt;
+}
+
+function copyQuote() {
+  if (!window._lastQuote) return;
+  navigator.clipboard.writeText(window._lastQuote).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '✓ Copied!';
+    btn.classList.add('copied');
+    const toast = document.getElementById('toast');
+    toast.classList.add('show');
+    setTimeout(() => {
+      btn.textContent = '📋 Copy quote summary';
+      btn.classList.remove('copied');
+      toast.classList.remove('show');
+    }, 2500);
+  });
+}
+
+function openJobber() {
+  window.open('https://app.jobber.com/dashboard', '_blank');
+}
+
+function resetAll() {
+  document.getElementById('acres').value = 1;
+  document.getElementById('acres-display').innerHTML = '1<span>acre</span>';
+  ['stumps','terrain','rush','commercial'].forEach(id => {
+    document.getElementById(id).checked = false;
+  });
+  SEL.veg = 'medium';
+  SEL.disposal = 'haul';
+  document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelector('[data-val="medium"]').classList.add('selected');
+  document.querySelector('[data-val="haul"]').classList.add('selected');
+  calc();
+}
+
+document.getElementById('acres').addEventListener('input', function() {
+  const v = parseFloat(this.value);
+  const label = v === 1 ? 'acre' : 'acres';
+  document.getElementById('acres-display').innerHTML = v + '<span>' + label + '</span>';
+  calc();
+});
+
+calc();
+</script>
+</body>
+</html>
