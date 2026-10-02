@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trailblazers — L10 Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --dk:#060808;--s:#0C1010;--s2:#121818;--s3:#1A2020;
+  --br:rgba(255,255,255,0.07);--tx:#E8EDE8;--td:#8FA8A0;--tm:#4A5E58;
+  --red:#FF4444;--rbg:#2A0808;--rbr:#993333;
+  --amb:#FFB800;--abg:#1A1200;--abr:#886600;
+  --g:#5CB800;--gd:#3B6D11;--gbg:#0A1408;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--dk);color:var(--tx);font-family:'Barlow',sans-serif;font-size:13px;min-height:100vh}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--s)}
+::-webkit-scrollbar-thumb{background:var(--s3);border-radius:2px}
+select,input{color-scheme:dark}
+
+.header{border-bottom:3px solid var(--g);padding:18px 36px 14px;background:linear-gradient(135deg,#040804 0%,#0A140A 60%,#060C06 100%)}
+.h-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.h-title{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:3px;color:var(--g);line-height:1}
+.h-sub{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:600;color:var(--td);letter-spacing:3px;text-transform:uppercase;margin-top:3px}
+.badge{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:2px;padding:3px 10px;border-radius:2px;text-transform:uppercase;background:var(--g);color:#040804}
+
+.sync-bar{background:#030505;border-bottom:1px solid var(--br);padding:6px 36px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.sdot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sdot.live{background:var(--g);animation:pulse 2s infinite}
+.sdot.off{background:var(--tm)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.sync-txt{font-size:11px;color:var(--td);font-family:'DM Mono',monospace;display:flex;align-items:center;gap:5px}
+
+.links-bar{background:#030505;border-bottom:1px solid var(--br);padding:8px 36px;display:flex;gap:8px;flex-wrap:wrap}
+.link-chip{font-size:11px;color:var(--td);border:1px solid var(--br);border-radius:3px;padding:5px 12px 5px 8px;text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-weight:600;letter-spacing:.5px;transition:all .15s;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.link-chip svg{width:14px;height:14px;flex-shrink:0}
+.link-chip:hover{color:var(--g);border-color:var(--g)}
+.link-chip.todo{color:var(--amb);border-color:rgba(255,184,0,.3)}
+
+.tbtn{height:28px;padding:0 12px;border-radius:3px;border:1px solid var(--br);background:var(--s2);color:var(--td);font-size:11px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:600;letter-spacing:1px;text-transform:uppercase;transition:all .15s;white-space:nowrap}
+.tbtn:hover{color:var(--tx);border-color:rgba(255,255,255,.2)}
+.tbtn.green{border-color:var(--gd);color:var(--g);background:var(--gbg)}
+
+.content{padding:22px 36px 48px;max-width:1600px}
+.sec-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px;color:var(--g);margin:22px 0 5px}
+.sec-title:first-child{margin-top:0}
+.sec-sub{font-size:12px;color:var(--td);margin-bottom:16px;line-height:1.6}
+
+.tabs{display:flex;background:#030505;border-top:1px solid var(--gd);border-bottom:1px solid var(--gd);padding:0 36px;overflow-x:auto;gap:36px}
+.tab{display:flex;align-items:center;gap:10px;padding:14px 0;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;letter-spacing:1.5px;text-transform:uppercase;color:var(--td);cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;white-space:nowrap}
+.tab:hover{color:var(--tx)}
+.tab.active{color:var(--g);border-bottom-color:var(--g)}
+.tab .tab-icon{font-size:16px}
+.tab-badge{background:var(--red);color:#fff;font-size:11px;font-weight:800;border-radius:99px;padding:1px 8px;font-family:'Barlow',sans-serif;letter-spacing:0}
+.panel{display:none}.panel.active{display:block}
+
+/* ── TASK TRACKER ── */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--br);border-radius:4px;overflow:hidden;margin-bottom:16px}
+.stat-card{padding:18px;text-align:center;border-right:1px solid var(--br);background:var(--s2)}
+.stat-card:last-child{border-right:none}
+.stat-num{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;line-height:1;color:var(--tx)}
+.stat-num.red{color:var(--red)}.stat-num.amb{color:var(--amb)}
+.stat-lbl{font-size:10px;color:var(--td);letter-spacing:1.5px;text-transform:uppercase;margin-top:4px}
+.overdue-banner{background:var(--rbg);border:1px solid var(--rbr);border-radius:4px;padding:10px 16px;font-size:12px;color:var(--red);margin-bottom:16px}
+.task-add-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.task-add-bar input[type=text]{flex:1;min-width:220px}
+.tinp,.tsel{background:var(--s2);border:1px solid var(--br);border-radius:3px;color:var(--tx);font-family:'Barlow',sans-serif;font-size:12px;padding:8px 10px}
+.tinp:focus,.tsel:focus{outline:none;border-color:var(--g)}
+.filter-row{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;align-items:center}
+.pill{padding:6px 14px;border-radius:99px;border:1px solid var(--br);background:var(--s2);color:var(--td);font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase}
+.pill.active{background:var(--red);color:#fff;border-color:var(--red)}
+.pill.active.gray{background:var(--tx);color:#000;border-color:var(--tx)}
+.group-hdr{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--td);margin:18px 0 8px}
+.owner-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--s2);border-radius:4px;margin-bottom:4px;cursor:pointer;border:1px solid var(--br);transition:border-color .15s}
+.owner-row:hover{border-color:var(--gd)}
+.owner-name{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--tx)}
+.owner-name .av{width:20px;height:20px;border-radius:50%;background:var(--gd);color:#040804;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.owner-stats{font-size:12px;color:var(--td);display:flex;gap:12px}
+.owner-stats b{color:var(--tx)}
+.owner-stats .red{color:var(--red);font-weight:700}
+.mic-btn{background:var(--s2);border:1px solid var(--br);border-radius:3px;color:var(--td);cursor:pointer;font-size:13px;padding:6px 9px;flex-shrink:0}
+.mic-btn:hover{border-color:var(--gd);color:var(--g)}
+.mic-btn.recording{background:var(--rbg);border-color:var(--rbr);color:var(--red);animation:pulse 1s infinite}
+
+.eq-row{display:grid;grid-template-columns:1fr 110px 110px auto 32px;gap:10px;align-items:center;padding:9px 12px;border-bottom:1px solid rgba(255,255,255,.05);background:var(--s2)}
+.pm-row{display:grid;grid-template-columns:1fr 1fr 90px 110px 110px auto 32px;gap:10px;align-items:center;padding:9px 12px;border-bottom:1px solid rgba(255,255,255,.05);background:var(--s2)}
+.mi-row{display:grid;grid-template-columns:1fr 1.4fr 110px auto auto 32px;gap:10px;align-items:center;padding:9px 12px;border-bottom:1px solid rgba(255,255,255,.05);background:var(--s2)}
+.chk-row{display:grid;grid-template-columns:100px 1fr 110px 90px 1fr 32px;gap:10px;align-items:center;padding:9px 12px;border-bottom:1px solid rgba(255,255,255,.05);background:var(--s2)}
+.status-select{background:var(--s2);border:1px solid var(--br);border-radius:3px;color:var(--tx);font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;padding:3px 6px}
+.pm-chip{padding:3px 9px;border-radius:99px;font-size:10px;font-weight:700;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;white-space:nowrap}
+.pm-chip.ok{background:rgba(92,184,0,.15);color:#5CB800}
+.pm-chip.soon{background:var(--abg);color:var(--amb)}
+.pm-chip.overdue{background:var(--rbg);color:var(--red)}
+.trow{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-left:3px solid var(--red);background:var(--s2);border-radius:0 4px 4px 0;margin-bottom:2px}
+.trow.ok{border-left-color:var(--gd)}
+.trow.done{opacity:.4}
+.trow.done .trow-title{text-decoration:line-through}
+.trow input[type=checkbox]{margin-top:2px;width:16px;height:16px}
+.trow-body{flex:1}
+.trow-title{font-size:14px;color:var(--tx);margin-bottom:6px}
+.chip-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.chip{font-size:10px;font-weight:700;padding:2px 9px;border-radius:99px;letter-spacing:.5px}
+.chip.owner{display:flex;align-items:center;gap:5px;background:var(--s3);color:var(--td)}
+.chip.owner .av{width:16px;height:16px;border-radius:50%;background:var(--gd);color:#040804;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.chip.overdue{background:var(--rbg);color:var(--red)}
+.chip.prio-high{background:var(--rbg);color:var(--red)}
+.chip.prio-medium{background:var(--abg);color:var(--amb)}
+.chip.prio-low{background:var(--s3);color:var(--td)}
+.chip.cat{background:rgba(74,158,255,.15);color:#4A9EFF}
+.trow-del{background:none;border:none;color:var(--tm);cursor:pointer;font-size:15px;padding:2px 4px}
+.trow-del:hover{color:var(--red)}
+
+/* ── L10 MEETING STEPPER ── */
+.meeting-shell{display:grid;grid-template-columns:230px 1fr;gap:0;border:1px solid var(--br);border-radius:6px;overflow:hidden;min-height:560px}
+.meeting-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px}
+.meeting-date{display:flex;align-items:center;gap:10px}
+.meeting-date input{background:var(--s2);border:1px solid var(--br);border-radius:3px;color:var(--g);font-family:'DM Mono',monospace;font-size:13px;padding:6px 10px}
+.timer-block{display:flex;align-items:center;gap:14px}
+.timer-item{text-align:center}
+.timer-lbl{font-size:9px;color:var(--tm);letter-spacing:1px;text-transform:uppercase}
+.timer-val{font-family:'DM Mono',monospace;font-size:20px;color:var(--g);font-weight:700}
+.timer-val.seg{color:var(--tx)}
+.agenda-sidebar{background:var(--s2);border-right:1px solid var(--br);padding:16px 0;display:flex;flex-direction:column}
+.agenda-item{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;border-left:3px solid transparent;color:var(--tm)}
+.agenda-item:hover{color:var(--td)}
+.agenda-item.active{border-left-color:var(--g);background:rgba(57,255,20,.05);color:var(--tx)}
+.agenda-item .anum{width:20px;height:20px;border-radius:50%;background:var(--s3);color:var(--tm);font-family:'Bebas Neue',sans-serif;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.agenda-item.active .anum{background:var(--g);color:#040804}
+.agenda-item .atext{line-height:1.3}
+.agenda-item .atitle{font-size:12px;font-weight:600}
+.agenda-item .atime{font-size:9px;color:var(--tm)}
+.agenda-stats{margin-top:auto;padding:14px 16px;border-top:1px solid var(--br);font-size:11px}
+.astat-row{display:flex;justify-content:space-between;padding:4px 0;color:var(--td)}
+.astat-row b{color:var(--tx);font-family:'DM Mono',monospace}
+.astat-row.warn b{color:var(--red)}
+.save-meeting-btn{margin:14px 16px 0;padding:10px;border:none;border-radius:3px;background:var(--g);color:#040804;font-weight:800;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;cursor:pointer;text-transform:uppercase;font-size:12px}
+.meeting-main{padding:26px 30px;overflow-y:auto}
+.step-title{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--g);letter-spacing:1px}
+.step-sub{font-size:12px;color:var(--td);margin:6px 0 20px}
+.segue-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.segue-card{background:var(--s2);border:1px solid var(--br);border-radius:4px;padding:14px}
+.segue-card h4{font-size:13px;color:var(--tx);margin-bottom:8px;display:flex;justify-content:space-between}
+.segue-card h4 button{background:none;border:none;color:var(--tm);cursor:pointer;font-size:12px}
+.segue-card textarea{width:100%;min-height:70px;background:var(--s);border:1px solid var(--br);border-radius:3px;color:var(--tx);font-family:'Barlow',sans-serif;font-size:12px;padding:8px;resize:vertical}
+.segue-card textarea:focus{outline:none;border-color:var(--g)}
+.add-participant{display:flex;gap:8px;margin-top:14px}
+.note-area{width:100%;min-height:90px;background:var(--s2);border:1px solid var(--br);border-radius:4px;color:var(--tx);font-family:'Barlow',sans-serif;font-size:13px;padding:10px;resize:vertical}
+.note-area:focus{outline:none;border-color:var(--g)}
+.rate-inp{width:60px;background:var(--s2);border:1px solid var(--br);border-radius:3px;color:var(--g);font-family:'Bebas Neue',sans-serif;font-size:20px;text-align:center;padding:4px}
+
+.kpi-section{margin-bottom:18px}
+.kpi-sec-hdr{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--s2);border:1px solid var(--br);border-radius:4px 4px 0 0;border-bottom:2px solid var(--g)}
+.kpi-sec-name{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--g)}
+.kpi-table{width:100%;border-collapse:collapse}
+.kpi-table th{background:var(--s);color:var(--td);font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:7px 9px;text-align:left;border-bottom:1px solid var(--br);white-space:nowrap}
+.kpi-table td{padding:7px 9px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
+.kpi-table tr:hover td{background:rgba(255,255,255,.02)}
+.kpi-name{font-size:12px;color:var(--tx);font-weight:500}
+.kpi-floor{font-size:11px;color:var(--red);font-family:'DM Mono',monospace}
+.kpi-target{font-size:11px;color:var(--g);font-weight:600;font-family:'DM Mono',monospace}
+.actual-inp{width:74px;background:var(--s2);border:1px solid var(--br);border-radius:3px;color:var(--tx);font-family:'DM Mono',monospace;font-size:12px;padding:4px 6px}
+.actual-inp:focus{outline:none;border-color:var(--g)}
+.actual-inp.g{color:var(--g);border-color:rgba(92,184,0,.4)}
+.actual-inp.a{color:var(--amb);border-color:rgba(255,184,0,.4)}
+.actual-inp.r{color:var(--red);border-color:rgba(255,68,68,.4)}
+.status-chip{display:inline-flex;align-items:center;padding:2px 7px;border-radius:99px;font-size:10px;font-weight:600;white-space:nowrap;font-family:'Barlow Condensed',sans-serif}
+.st-g{background:rgba(92,184,0,.12);color:#5CB800}.st-a{background:var(--abg);color:var(--amb)}.st-r{background:var(--rbg);color:var(--red)}.st-n{background:var(--s3);color:var(--tm)}
+.mini-chart{width:100px;height:32px}
+
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.chart-card{background:var(--s2);border:1px solid var(--br);border-radius:4px;padding:14px}
+.chart-title{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--td);margin-bottom:10px}
+.chart-wrap{position:relative;height:190px}
+
+.rock-row{display:grid;grid-template-columns:1fr 110px 90px auto 32px;gap:10px;align-items:center;padding:9px 12px;border-bottom:1px solid rgba(255,255,255,.05);background:var(--s2)}
+.issue-row{display:grid;grid-template-columns:1fr 110px 130px 32px;gap:10px;align-items:center;padding:9px 12px;border-bottom:1px solid rgba(255,255,255,.05);background:var(--s2)}
+.track-chip{padding:3px 9px;border-radius:99px;font-size:10px;font-weight:700;cursor:pointer;border:none;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;white-space:nowrap}
+.track-chip.on{background:rgba(92,184,0,.15);color:#5CB800}
+.track-chip.off{background:var(--rbg);color:var(--red)}
+.status-btn{padding:3px 9px;border-radius:99px;font-size:10px;font-weight:700;cursor:pointer;border:none;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;white-space:nowrap}
+.status-btn.identified{background:var(--s3);color:var(--tm)}
+.status-btn.discussing{background:var(--abg);color:var(--amb)}
+.status-btn.solved{background:rgba(92,184,0,.15);color:#5CB800}
+.add-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.add-row input{flex:1;min-width:160px}
+
+@media print {
+  .sync-bar,.links-bar,.tbtn,.actual-inp,.tabs,.add-row,.trow-del,.task-add-bar,.filter-row{display:none!important}
+  body{background:#fff;color:#000}
+  .kpi-table td,.kpi-table th{color:#000;border-color:#ccc}
+  .chart-card{border-color:#ccc;background:#fff}
+  .content{padding:10px 20px}
+  .chart-grid{page-break-inside:avoid}
+  .panel{display:block!important}
+}
+body.print-scorecard-only .panel{display:none!important}
+body.print-scorecard-only #panel-l10{display:block!important}
+/* ═══ Routes tab ═══ */
+.rt-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.rt-status{font-family:'DM Mono',monospace;font-size:11px;color:var(--td)}
+.rt-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.rt-tabs button,.rt-seg button{background:var(--s2);border:1px solid var(--br);color:var(--td);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;letter-spacing:.5px;padding:10px 16px;border-radius:4px;cursor:pointer}
+.rt-tabs button.on,.rt-seg button.on{background:var(--g);color:#040804;border-color:var(--g)}
+.rt-seg button{font-size:12px;padding:5px 10px}
+.rt-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.rt-k{background:var(--s);border:1px solid var(--br);border-radius:4px;padding:10px}
+.rt-k b{display:block;font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;color:var(--tx);font-weight:400}
+.rt-k span{font-size:11px;color:var(--td);text-transform:uppercase;letter-spacing:1px}
+.rt-k.ok b{color:var(--g)} .rt-k.bad b{color:var(--red)} .rt-k.amb b{color:var(--amb)}
+.rt-bar{height:8px;background:var(--s2);border-radius:4px;overflow:hidden;margin:10px 0}
+.rt-bar i{display:block;height:100%;background:var(--g)}
+.rt-run{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.rt-btn{background:var(--g);color:#040804;border:0;border-radius:4px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:17px;letter-spacing:1px;padding:12px 18px;min-height:48px;min-width:96px;cursor:pointer}
+.rt-btn.big{font-size:20px;padding:14px 24px}
+.rt-btn.ghost{background:var(--s2);color:var(--tx);border:1px solid var(--br)}
+.rt-btn.sm{min-height:36px;min-width:0;padding:6px 12px;font-size:14px;margin-top:6px}
+.rt-note{font-size:12px;color:var(--td)} .rt-note b{color:var(--tx)}
+.rt-cols{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px;align-items:start}
+@media(max-width:900px){.rt-cols{grid-template-columns:minmax(0,1fr)}}
+.rt-area{background:var(--s);border:1px solid var(--br);border-radius:4px;padding:10px 12px;margin-bottom:12px}
+.rt-ah{display:flex;justify-content:space-between;align-items:center;gap:8px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;letter-spacing:.5px;color:var(--g)}
+.rt-ah a{color:var(--amb);text-decoration:none;font-size:14px;white-space:nowrap}
+.rt-stop{display:grid;grid-template-columns:36px 1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--br)}
+.rt-n{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--s3);font-weight:700;font-size:14px}
+.rt-stop.next .rt-n{background:#FF8A1F;color:#fff} .rt-stop.done .rt-n{background:var(--tm);color:#fff} .rt-stop.done .rt-who{opacity:.6}
+.rt-who{font-weight:700;font-size:15px}
+.rt-addr{color:var(--td);font-size:13px}
+.rt-act{text-align:right}
+.rt-took{font-family:'Bebas Neue',sans-serif;font-size:22px} .rt-took.ok,.ok{color:var(--g)} .rt-took.bad,.bad{color:var(--red)}
+.rt-salt{display:flex;align-items:center;gap:6px;justify-content:flex-end;font-size:13px;margin-top:4px}
+.rt-salt input{width:20px;height:20px}
+.rt-mapbox{background:var(--s);border:1px solid var(--br);border-radius:4px;padding:10px 12px;position:sticky;top:10px}
+.rt-map{width:100%;height:auto;display:block;background:var(--s2);border-radius:4px;margin-top:8px}
+.rt-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--td);margin-top:8px}
+.rt-legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+.rt-tw{overflow-x:auto} .rt-t{width:100%;border-collapse:collapse;font-size:13px}
+.rt-t th,.rt-t td{padding:7px 8px;border-bottom:1px solid var(--br);text-align:left;white-space:nowrap} .rt-t th{color:var(--td);font-weight:600}
+.rt-set{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px}
+.rt-set label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--td)}
+.rt-set input{background:var(--s2);border:1px solid var(--br);color:var(--tx);padding:9px;border-radius:4px;width:150px;font:500 14px 'Barlow',sans-serif}
+
+.rt-erow{display:grid;grid-template-columns:18px 36px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--br);cursor:grab}
+.rt-erow.paused{opacity:.55} .rt-erow.dragging{opacity:.4} .rt-erow.over{box-shadow:0 -3px 0 var(--amb) inset}
+.rt-grip{color:var(--td);font-size:18px;cursor:grab}
+.rt-ebtns{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.rt-ebtns .rt-btn.sm{margin-top:0;min-width:40px}
+.rt-btn.danger{color:var(--red);border-color:var(--rbr)}
+.rt-btn:disabled{opacity:.35;cursor:not-allowed}
+.rt-tag{font-family:'DM Mono',monospace;font-size:10px;color:var(--amb);border:1px solid var(--abr);padding:1px 5px;border-radius:2px}
+.rt-eform{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:8px}
+.rt-eform label{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--td)}
+.rt-eform input,.rt-eform select{background:var(--s2);border:1px solid var(--br);color:var(--tx);padding:8px;border-radius:3px;font:500 13px 'Barlow',sans-serif;min-width:90px}
+@media(max-width:700px){.rt-erow{grid-template-columns:28px minmax(0,1fr)} .rt-grip{display:none} .rt-ebtns{grid-column:1/-1;justify-content:flex-start}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="h-top">
+    <div>
+      <div class="h-title">TRAILBLAZERS</div>
+      <div class="h-sub">Operations Hub</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">
+      <span class="badge">Live</span>
+      <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">
+        <button class="tbtn green" onclick="shiftWeeks()">➜ Shift Weeks</button>
+        <button class="tbtn" onclick="window.print()">🖨️ Print</button>
+        <span style="font-size:10px;color:var(--td);align-self:center;font-family:'DM Mono',monospace">Last sync: <span id="last-sync">—</span></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sync-bar">
+  <div class="sync-txt"><div class="sdot off" id="sync-dot"></div><span id="sync-lbl">Connecting…</span></div>
+  <div style="margin-left:auto;font-size:10px;color:var(--td);font-family:'DM Mono',monospace">Same live data as the Command Center — edits here show there too</div>
+</div>
+
+<div class="links-bar">
+  <a class="link-chip" href="https://secure.getjobber.com/jobs?order=ASCENDING&sort=JOB_STATUS" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#00A6E4"/><path d="M8 7h5.5a3 3 0 0 1 0 6H10v-2h3.3a1 1 0 0 0 0-2H8V7z" fill="#fff"/><circle cx="9" cy="16.5" r="1.6" fill="#fff"/></svg>
+    Jobber ↗</a>
+  <a class="link-chip" href="https://qbo.intuit.com/app/homepage?locale=en-us&iux_intuit_tid=1-6ab28166-7c31939526bd1a942ef62fbd" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#2CA01C"/><path d="M7 12a5 5 0 0 1 5-5h1v3h-1a2 2 0 1 0 0 4h1v3h-1a5 5 0 0 1-5-5z" fill="#fff"/><path d="M17 12a5 5 0 0 1-5 5h-1v-3h1a2 2 0 1 0 0-4h-1V7h1a5 5 0 0 1 5 5z" fill="#fff"/></svg>
+    QuickBooks ↗</a>
+  <a class="link-chip" href="https://www.dropbox.com/home/Trailblazers%20content?di=left_nav_browse" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24"><path d="M6 3l6 3.8L6 10.6 0 6.8 6 3z" fill="#0061FF"/><path d="M18 3l6 3.8-6 3.8-6-3.8 6-3.8z" fill="#0061FF"/><path d="M0 13.4l6-3.8 6 3.8-6 3.8-6-3.8z" fill="#0061FF"/><path d="M18 9.6l6 3.8-6 3.8-6-3.8 6-3.8z" fill="#0061FF"/><path d="M6 18.2l6-3.8 6 3.8-6 3.6-6-3.6z" fill="#0061FF"/></svg>
+    Dropbox ↗</a>
+  <a class="link-chip" href="https://richolson7.github.io/trailblazers-l10/land-clearing.html" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#8B5A2B"/><path d="M12 4l4 8h-2.5l3 8H7.5l3-8H8l4-8z" fill="#fff"/></svg>
+    Land Clearing ↗</a>
+  <a class="link-chip" href="https://trailblazers-ops.com/" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#5CB800"/><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm8.4 3l-1.7-.5a6.9 6.9 0 0 0-.6-1.4l1-1.5-1.8-1.8-1.5 1a6.9 6.9 0 0 0-1.4-.6L14 4.6h-2.5L11 6.2a6.9 6.9 0 0 0-1.4.6l-1.5-1L6.3 7.6l1 1.5a6.9 6.9 0 0 0-.6 1.4L5 11v2.5l1.7.5c.15.5.35.95.6 1.4l-1 1.5 1.8 1.8 1.5-1c.45.25.9.45 1.4.6l.5 1.7H14l.5-1.7c.5-.15.95-.35 1.4-.6l1.5 1 1.8-1.8-1-1.5c.25-.45.45-.9.6-1.4l1.7-.5V11z" fill="#fff"/></svg>
+    Ops App ↗</a>
+  <a class="link-chip" href="https://drive.google.com" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24"><path d="M8.5 2h7l6.5 11-3.5 6h-13l-3.5-6z" fill="#1FA463"/><path d="M8.5 2l-6.5 11h7l6.5-11z" fill="#FFC107"/><path d="M9 13l-3.5 6h13l3.5-6z" fill="#1A73E8"/></svg>
+    Google Drive ↗</a>
+  <a class="link-chip" href="https://calendar.google.com" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2" fill="#fff" stroke="#4285F4" stroke-width="1.5"/><rect x="3" y="4" width="18" height="5" fill="#4285F4"/><text x="12" y="17" text-anchor="middle" font-size="9" font-weight="700" fill="#1A73E8">31</text></svg>
+    Google Calendar ↗</a>
+  <a class="link-chip" href="https://mail.google.com" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2" fill="#fff" stroke="#dadce0" stroke-width="1"/><path d="M2 6.5l10 7 10-7" fill="none" stroke="#EA4335" stroke-width="1.6"/><path d="M2 6l10 7L2 18.5V6z" fill="#EA4335"/><path d="M22 6L12 13l10 5.5V6z" fill="#EA4335"/></svg>
+    Gmail ↗</a>
+  <a class="link-chip" href="https://outlook.office.com/mail/" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#0078D4"/><rect x="3" y="6" width="10" height="12" rx="1.5" fill="#fff"/><ellipse cx="8" cy="12" rx="2.6" ry="3.2" fill="none" stroke="#0078D4" stroke-width="1.6"/><path d="M14 8h7v8h-7z" fill="#9CD3FF"/><path d="M14 8l3.5 3L21 8" fill="none" stroke="#fff" stroke-width="1.2"/></svg>
+    Outlook ↗</a>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showPanel('tasks',this)"><span class="tab-icon">🗒️</span>Task Tracker<span class="tab-badge" id="task-badge">0</span></div>
+  <div class="tab" onclick="showPanel('meeting',this)"><span class="tab-icon">⚡</span>L10 Meeting</div>
+  <div class="tab" onclick="showPanel('marketing',this)"><span class="tab-icon">📣</span>Marketing</div>
+  <div class="tab" onclick="showPanel('sales',this)"><span class="tab-icon">💵</span>Sales</div>
+  <div class="tab" onclick="showPanel('ops',this)"><span class="tab-icon">⚙️</span>Ops</div>
+  <div class="tab" onclick="showPanel('routes',this)"><span class="tab-icon">🚚</span>Routes</div>
+  <div class="tab" onclick="showPanel('l10',this)"><span class="tab-icon">📊</span>Scorecard</div>
+</div>
+
+<div class="content">
+
+  <!-- ═══ ROUTES (lawn & snow) ═══ -->
+  <div class="panel" id="panel-routes"><div id="rt-root"></div></div>
+
+  <!-- ═══ TASK TRACKER ═══ -->
+  <div class="panel active" id="panel-tasks">
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-num" id="st-open">0</div><div class="stat-lbl">Open</div></div>
+      <div class="stat-card"><div class="stat-num red" id="st-overdue">0</div><div class="stat-lbl">Overdue</div></div>
+      <div class="stat-card"><div class="stat-num amb" id="st-duetoday">0</div><div class="stat-lbl">Due Today</div></div>
+      <div class="stat-card"><div class="stat-num red" id="st-highpri">0</div><div class="stat-lbl">High Priority</div></div>
+    </div>
+    <div id="overdue-banner-wrap"></div>
+
+    <div class="group-hdr">Owner Summary — click a person to filter</div>
+    <div id="owner-summary" style="margin-bottom:20px"></div>
+
+    <div class="task-add-bar">
+      <input type="text" class="tinp" id="new-task-text" placeholder="Add a task and press Enter..." onkeydown="if(event.key==='Enter')addTask()">
+      <button class="mic-btn" onclick="startVoiceInto('new-task-text', this)">🎤</button>
+      <select class="tsel" id="new-task-owner"></select>
+      <select class="tsel" id="new-task-category">
+        <option>General</option><option>Finance</option><option>Sales</option><option>Ops</option><option>Marketing</option><option>Admin</option>
+      </select>
+      <select class="tsel" id="new-task-priority">
+        <option>Low</option><option selected>Medium</option><option>High</option>
+      </select>
+      <input type="date" class="tinp" id="new-task-due">
+      <button class="tbtn green" onclick="addTask()">+ Add</button>
+    </div>
+
+    <div class="filter-row" id="task-filter-pills"></div>
+    <div id="task-group-list"></div>
+  </div>
+
+  <!-- ═══ L10 MEETING — STEPPER ═══ -->
+  <div class="panel" id="panel-meeting">
+    <div class="meeting-top">
+      <div>
+        <div class="step-title" style="font-size:1.9rem">LEVEL 10 MEETING</div>
+        <div class="meeting-date">
+          <input type="date" id="meeting-date">
+          <span style="font-size:11px;color:var(--td)" id="meeting-date-readable"></span>
+        </div>
+      </div>
+      <div class="timer-block">
+        <div class="timer-item"><div class="timer-lbl">Total</div><div class="timer-val" id="timer-total">0:00</div></div>
+        <div class="timer-item"><div class="timer-lbl">Segment</div><div class="timer-val seg" id="timer-segment">5:00</div></div>
+        <button class="tbtn green" id="timer-startbtn" onclick="toggleTimer()">▶ Start</button>
+        <button class="tbtn" onclick="resetTimer()">Reset</button>
+        <button class="tbtn" onclick="nextStep()">Next →</button>
+      </div>
+    </div>
+
+    <div class="meeting-shell">
+      <div class="agenda-sidebar" id="agenda-sidebar"></div>
+      <div class="meeting-main" id="meeting-main"></div>
+    </div>
+  </div>
+
+  <!-- ═══ MARKETING ═══ -->
+  <div class="panel" id="panel-marketing">
+    <div class="sec-title">📣 Marketing</div>
+    <div class="sec-sub">Marketing tracking for Trailblazers — tell me what metrics/content you want tracked here and I'll build it out.</div>
+    <div style="color:var(--td);font-size:12px;padding:20px;border:1px dashed var(--br);border-radius:4px;text-align:center">No marketing KPIs set up yet.</div>
+  </div>
+
+  <!-- ═══ SALES ═══ -->
+  <div class="panel" id="panel-sales">
+    <div class="sec-title">💵 Sales</div>
+    <div class="sec-sub">4-week trend, same numbers as the Command Center. Edit values on the Scorecard tab.</div>
+    <div class="chart-grid" id="sales-chart-grid"></div>
+  </div>
+
+  <!-- ═══ OPS ═══ -->
+  <div class="panel" id="panel-ops">
+    <div class="sec-title">⚙️ Ops</div>
+    <div class="sec-sub">Equipment, preventive maintenance, issues, and daily checks — KPI trend charts at the bottom.</div>
+    <div class="filter-row" id="ops-subtabs"></div>
+    <div id="ops-sub-content"></div>
+    <div class="sec-title" style="margin-top:30px">📈 KPI Trends</div>
+    <div class="sec-sub">Same numbers as the Command Center. Edit values on the Scorecard tab.</div>
+    <div class="chart-grid" id="ops-chart-grid"></div>
+  </div>
+
+  <!-- ═══ SCORECARD ═══ -->
+  <div class="panel" id="panel-l10">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <div class="sec-title" style="margin:0">📋 Sales</div>
+      <button class="tbtn green" onclick="printScorecardOnly()">🖨️ Print Scorecard Only</button>
+    </div>
+    <div id="kpi-Sales"></div>
+    <div class="sec-title">⚙️ Ops</div>
+    <div id="kpi-Ops"></div>
+    <div class="sec-title">📈 Scorecard — Sales + Ops (4-Week Trend)</div>
+    <div class="sec-sub">Everything above and below prints on this same page — hit Print for the full packet.</div>
+    <div class="chart-grid" id="chart-grid"></div>
+  </div>
+
+</div>
+
+<script>
+const {createClient} = supabase;
+const db = createClient(
+  'https://igaylyhkssahczubiztb.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlnYXlseWhrc3NhaGN6dWJpenRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyOTk3MzQsImV4cCI6MjA5Mjg3NTczNH0.iiRC320be1-kLa8tQoTupqWTu_8yTaEaJGVpdI4dnAo'
+);
+const DB_ROW = 'tb_cmd';
+
+const KPIS = {
+  Sales: [
+    { key: 'revenue_weekly', label: 'Overall Revenue ($)', target: 40000, floor: 15000 },
+    { key: 'close_rate', label: 'Close Rate %', target: 60, floor: 30 },
+    { key: 'pipeline_value', label: 'Pipeline ($)', target: 150000, floor: 50000 },
+    { key: 'margin_pct', label: 'Margin %', target: 45, floor: 30 },
+    { key: 'marketing_posts', label: 'Marketing Posts', target: 5, floor: 2 },
+    { key: 'google_reviews', label: 'Google Reviews', target: 3, floor: 1 },
+    { key: 'lead_sources', label: 'Lead Sources', target: 5, floor: 3 }
+  ],
+  Ops: [
+    { key: 'jobs_completed', label: 'Jobs Completed', target: 8, floor: 3 },
+    { key: 'on_time_completion', label: 'On Time Completion %', target: 95, floor: 85 },
+    { key: 'safety_incidents', label: 'Safety Incidents', target: 0, floor: 2, reverse: true },
+    { key: 'customer_satisfaction', label: 'Customer Satisfaction %', target: 95, floor: 85 }
+  ]
+};
+
+const AGENDA = [
+  {key:'segue', label:'Segue', min:5},
+  {key:'scorecard', label:'Scorecard', min:10},
+  {key:'rocks', label:'Rocks', min:5},
+  {key:'headlines', label:'Headlines', min:5},
+  {key:'todos', label:'To-Dos', min:5},
+  {key:'ids', label:'IDS', min:55},
+  {key:'conclude', label:'Conclude', min:5},
+];
+const DEFAULT_PARTICIPANTS = ['President','Ops Manager','Estimator','Admin','Crew Lead 1','Crew Lead 2'];
+const SEED_TASKS = [
+  { id: 1, text: 'Level 10 notes and Rocks updated', owner: 'Admin', category: 'General', priority: 'High', due: '2026-05-05', done: false },
+  { id: 2, text: 'What to do with wood pile at land? Brady/Rich/Jessica', owner: 'Ops Manager', category: 'General', priority: 'High', due: '2026-05-07', done: false },
+  { id: 3, text: 'Pay and review process reviewed by Dan and Amber', owner: 'Admin', category: 'Finance', priority: 'High', due: '2026-06-02', done: false },
+];
+
+let data = {};
+let tasks = [];
+let rocks = [];
+let issues = [];
+let notes = { segueByPerson:{}, headlines:'', cascade:'', rating:'' };
+let participants = DEFAULT_PARTICIPANTS.slice();
+let meetingHistory = [];
+let equipment = [];
+let pmSchedule = [];
+let maintIssues = [];
+let truckChecks = [];
+let opsSubTab = 'equipment';
+let chartInstances = {};
+
+let stepIdx = 0;
+let timerRunning = false;
+let totalSec = 0, segSec = AGENDA[0].min*60, timerInterval = null;
+
+function showPanel(id, el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  if (id === 'meeting'){
+    try { renderAgendaSidebar(); renderStepMain(); } catch(e){ console.error(e); }
+  }
+}
+
+function getW(key, w){ return parseFloat(data[`${key}_${w}`]) || 0; }
+function setW(key, w, val){ data[`${key}_${w}`] = parseFloat(val) || 0; }
+function getStatus(value, kpi){
+  const v = parseFloat(value) || 0;
+  if (kpi.reverse){ if (v<=kpi.floor) return 'g'; if (v<=kpi.target) return 'a'; return 'r'; }
+  return v>=kpi.target ? 'g' : v>=kpi.floor ? 'a' : 'r';
+}
+
+async function loadData(){
+  let loadOk = false;
+  try {
+    const {data:row,error} = await db.from('dashboard_data').select('*').eq('id',DB_ROW).single();
+    if (error) throw error;
+    data = (row && row.week_data) || {};
+    tasks = (row && row.tasks) || [];
+    rocks = (row && row.rocks) || [];
+    issues = (row && row.issues) || [];
+    notes = (row && row.meeting_notes) || { segueByPerson:{}, headlines:'', cascade:'', rating:'' };
+    if (!notes.segueByPerson) notes.segueByPerson = {};
+    participants = (row && row.participants) || DEFAULT_PARTICIPANTS.slice();
+    meetingHistory = (row && row.meeting_history) || [];
+    equipment = (row && row.equipment) || [];
+    pmSchedule = (row && row.pm_schedule) || [];
+    maintIssues = (row && row.maint_issues) || [];
+    truckChecks = (row && row.truck_checks) || [];
+    loadOk = true;
+    setSync('live');
+    if (row && row.updated_at){
+      const ago = Math.round((Date.now()-new Date(row.updated_at))/60000);
+      document.getElementById('last-sync').textContent = ago<2?'just now':ago<60?ago+'m ago':Math.round(ago/60)+'h ago';
+    }
+  } catch(e){ setSync('error'); toast('⚠️ Could not load saved data — showing nothing to avoid overwriting it. Reload to retry.'); }
+
+  if (loadOk){
+    let patched = false;
+    if (!tasks.length){ tasks = SEED_TASKS.slice(); patched = true; }
+    if (!tasks.some(t => t.text === 'Test Jobber for 1 week before automating Command Center hookup')){
+      const due = new Date(); due.setDate(due.getDate()+7);
+      tasks.push({ id: Date.now(), text: 'Test Jobber for 1 week before automating Command Center hookup', owner: 'President', category: 'Ops', priority: 'Medium', due: due.toISOString().split('T')[0], done: false });
+      patched = true;
+    }
+    if (!participants.includes('Customer Service')){ participants.push('Customer Service'); patched = true; }
+    if (!participants.includes('President')){ participants.unshift('President'); patched = true; }
+    if (patched) saveAllData();
+  }
+
+  document.getElementById('note-headlines') && (document.getElementById('note-headlines').value = notes.headlines||'');
+  document.getElementById('meeting-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('meeting-date-readable').textContent = new Date().toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric',year:'numeric'}) + ' · 90 minutes';
+  renderAll();
+}
+
+let saveTimer;
+function debouncedSave(){ clearTimeout(saveTimer); saveTimer=setTimeout(saveAllData,600); }
+async function saveAllData(){
+  try {
+    await db.from('dashboard_data').upsert({
+      id: DB_ROW, week_data: data, tasks: tasks, rocks: rocks, issues: issues,
+      meeting_notes: notes, participants: participants, meeting_history: meetingHistory,
+      equipment: equipment, pm_schedule: pmSchedule, maint_issues: maintIssues, truck_checks: truckChecks,
+      updated_at: new Date().toISOString()
+    }, {onConflict:'id'});
+    document.getElementById('last-sync').textContent = 'just now';
+  } catch(e){}
+}
+
+db.channel('tb-l10-rt').on('postgres_changes',{event:'UPDATE',schema:'public',table:'dashboard_data',filter:'id=eq.'+DB_ROW}, payload=>{
+  data = payload.new.week_data || {};
+  tasks = payload.new.tasks || [];
+  rocks = payload.new.rocks || [];
+  issues = payload.new.issues || [];
+  notes = payload.new.meeting_notes || notes;
+  participants = payload.new.participants || participants;
+  meetingHistory = payload.new.meeting_history || [];
+  equipment = payload.new.equipment || [];
+  pmSchedule = payload.new.pm_schedule || [];
+  maintIssues = payload.new.maint_issues || [];
+  truckChecks = payload.new.truck_checks || [];
+  renderAll();
+  document.getElementById('last-sync').textContent = 'just now';
+}).subscribe();
+
+function setSync(status){
+  const dot = document.getElementById('sync-dot'); const lbl = document.getElementById('sync-lbl');
+  if (status==='live'){ dot.className='sdot live'; lbl.textContent='Live — synced with the Command Center in real time'; }
+  else { dot.className='sdot off'; lbl.textContent='Offline — changes will retry'; }
+}
+
+function printScorecardOnly(){
+  document.body.classList.add('print-scorecard-only');
+  window.print();
+  setTimeout(()=>document.body.classList.remove('print-scorecard-only'), 500);
+}
+
+// ══════════════════════════════════════════════════════════
+// TASK TRACKER
+// ══════════════════════════════════════════════════════════
+let taskFilter = 'All';
+let ownerFilter = 'All';
+let categoryFilter = 'All';
+
+function renderOwnerSummary(){
+  const el = document.getElementById('owner-summary');
+  if (!el) return;
+  const owners = [...new Set(tasks.map(t=>t.owner).filter(Boolean))];
+  if (!owners.length){ el.innerHTML = '<div style="color:var(--td);font-size:12px">No tasks assigned yet.</div>'; return; }
+  const rows = owners.map(o=>{
+    const mine = tasks.filter(t=>t.owner===o);
+    const open = mine.filter(t=>!t.done).length;
+    const overdue = mine.filter(t=>t.due && !t.done && t.due < todayStr()).length;
+    return {o,open,overdue};
+  }).sort((a,b)=> b.overdue-a.overdue || b.open-a.open);
+  el.innerHTML = rows.map(r=>`
+    <div class="owner-row" onclick="filterByOwner('${r.o}')">
+      <div class="owner-name"><span class="av">${ownerInitials(r.o)}</span>${r.o}</div>
+      <div class="owner-stats"><span><b>${r.open}</b> open</span><span class="${r.overdue?'red':''}">${r.overdue} overdue</span></div>
+    </div>`).join('');
+}
+function filterByOwner(o){
+  ownerFilter = o; taskFilter = 'Open';
+  renderTasks();
+  toast(`Showing ${o}'s tasks`);
+}
+
+// ── VOICE INPUT (Web Speech API) ──
+function startVoiceInto(targetId, btnEl){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR){ toast('Voice input needs Chrome or Edge'); return; }
+  const target = document.getElementById(targetId);
+  const rec = new SR();
+  rec.lang = 'en-US';
+  rec.interimResults = false;
+  rec.maxAlternatives = 1;
+  btnEl.classList.add('recording'); btnEl.textContent = '⏹';
+  rec.onresult = (e)=>{
+    const text = e.results[0][0].transcript;
+    if (target.tagName === 'TEXTAREA' && target.value.trim()){
+      target.value = target.value.trim() + ' ' + text;
+    } else {
+      target.value = text;
+    }
+    target.dispatchEvent(new Event('change'));
+  };
+  rec.onerror = ()=>{ toast('Voice input error — try again'); };
+  rec.onend = ()=>{ btnEl.classList.remove('recording'); btnEl.textContent = '🎤'; };
+  rec.start();
+}
+
+function startVoiceIntoSegue(targetId, person, btnEl){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR){ toast('Voice input needs Chrome or Edge'); return; }
+  const target = document.getElementById(targetId);
+  const rec = new SR();
+  rec.lang = 'en-US'; rec.interimResults = false; rec.maxAlternatives = 1;
+  btnEl.classList.add('recording'); btnEl.textContent = '⏹';
+  rec.onresult = (e)=>{
+    const text = e.results[0][0].transcript;
+    target.value = (target.value.trim() ? target.value.trim() + ' ' : '') + text;
+    saveSegue(person, target.value);
+  };
+  rec.onerror = ()=>{ toast('Voice input error — try again'); };
+  rec.onend = ()=>{ btnEl.classList.remove('recording'); btnEl.textContent = '🎤'; };
+  rec.start();
+}
+
+function ownerInitials(name){ return (name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
+
+function populateOwnerSelect(){
+  const sel = document.getElementById('new-task-owner');
+  sel.innerHTML = participants.map(p=>`<option>${p}</option>`).join('') + '<option>Other</option>';
+}
+
+function todayStr(){ return new Date().toISOString().split('T')[0]; }
+function daysOverdue(due){
+  const d1 = new Date(due), d2 = new Date(todayStr());
+  return Math.round((d2-d1)/86400000);
+}
+
+function addTask(){
+  const text = document.getElementById('new-task-text').value.trim();
+  if (!text) return;
+  const owner = document.getElementById('new-task-owner').value;
+  const category = document.getElementById('new-task-category').value;
+  const priority = document.getElementById('new-task-priority').value;
+  const due = document.getElementById('new-task-due').value;
+  tasks.push({ id: Date.now(), text, owner, category, priority, due, done:false });
+  document.getElementById('new-task-text').value = '';
+  document.getElementById('new-task-due').value = '';
+  saveAllData();
+  renderTasks();
+}
+function toggleTask(id){ const t = tasks.find(x=>x.id===id); if (t){ t.done = !t.done; saveAllData(); renderTasks(); } }
+function deleteTask(id){ tasks = tasks.filter(x=>x.id!==id); saveAllData(); renderTasks(); }
+
+function setTaskFilter(f){ taskFilter = f; renderTasks(); }
+function setOwnerFilter(v){ ownerFilter = v; renderTasks(); }
+function setCategoryFilter(v){ categoryFilter = v; renderTasks(); }
+
+function renderTaskFilters(){
+  const pills = ['All','Overdue','Due Today','This Week','Open','Done'];
+  document.getElementById('task-filter-pills').innerHTML =
+    pills.map(p=>`<button class="pill ${taskFilter===p?'active'+(p==='Open'||p==='Done'?' gray':''):''}" onclick="setTaskFilter('${p}')">${p}</button>`).join('') +
+    `<select class="tsel" onchange="setOwnerFilter(this.value)" id="owner-filter-sel"></select>` +
+    `<select class="tsel" onchange="setCategoryFilter(this.value)" id="category-filter-sel"></select>`;
+  const owners = ['All owners', ...new Set(tasks.map(t=>t.owner).filter(Boolean))];
+  document.getElementById('owner-filter-sel').innerHTML = owners.map(o=>`<option value="${o==='All owners'?'All':o}">${o}</option>`).join('');
+  const cats = ['All categories', ...new Set(tasks.map(t=>t.category).filter(Boolean))];
+  document.getElementById('category-filter-sel').innerHTML = cats.map(c=>`<option value="${c==='All categories'?'All':c}">${c}</option>`).join('');
+}
+
+function matchesFilter(t){
+  const due = t.due;
+  const overdue = due && !t.done && due < todayStr();
+  const dueToday = due && !t.done && due === todayStr();
+  const wk = new Date(); wk.setDate(wk.getDate()+7);
+  const thisWeek = due && !t.done && due >= todayStr() && due <= wk.toISOString().split('T')[0];
+  if (taskFilter==='Overdue' && !overdue) return false;
+  if (taskFilter==='Due Today' && !dueToday) return false;
+  if (taskFilter==='This Week' && !thisWeek) return false;
+  if (taskFilter==='Open' && t.done) return false;
+  if (taskFilter==='Done' && !t.done) return false;
+  if (ownerFilter!=='All' && t.owner!==ownerFilter) return false;
+  if (categoryFilter!=='All' && t.category!==categoryFilter) return false;
+  return true;
+}
+
+function taskRowHtml(t){
+  const overdue = t.due && !t.done && t.due < todayStr();
+  const od = overdue ? daysOverdue(t.due) : 0;
+  return `<div class="trow ${overdue?'':'ok'} ${t.done?'done':''}">
+    <input type="checkbox" ${t.done?'checked':''} onchange="toggleTask(${t.id})">
+    <div class="trow-body">
+      <div class="trow-title">${t.text}</div>
+      <div class="chip-row">
+        <span class="chip owner"><span class="av">${ownerInitials(t.owner)}</span>${t.owner||'Unassigned'}</span>
+        ${overdue?`<span class="chip overdue">${od}d overdue</span>`:''}
+        ${t.priority?`<span class="chip prio-${(t.priority||'').toLowerCase()}">${t.priority}</span>`:''}
+        ${t.category?`<span class="chip cat">${t.category}</span>`:''}
+      </div>
+    </div>
+    <button class="trow-del" onclick="deleteTask(${t.id})">✕</button>
+  </div>`;
+}
+
+function renderTasks(){
+  populateOwnerSelect();
+  renderTaskFilters();
+  renderOwnerSummary();
+
+  const open = tasks.filter(t=>!t.done).length;
+  const overdue = tasks.filter(t=>t.due && !t.done && t.due < todayStr()).length;
+  const dueToday = tasks.filter(t=>t.due && !t.done && t.due === todayStr()).length;
+  const highPri = tasks.filter(t=>!t.done && t.priority==='High').length;
+  document.getElementById('st-open').textContent = open;
+  document.getElementById('st-overdue').textContent = overdue;
+  document.getElementById('st-duetoday').textContent = dueToday;
+  document.getElementById('st-highpri').textContent = highPri;
+
+  const banner = document.getElementById('overdue-banner-wrap');
+  if (overdue > 0){
+    const owners = [...new Set(tasks.filter(t=>t.due && !t.done && t.due<todayStr()).map(t=>t.owner).filter(Boolean))];
+    banner.innerHTML = `<div class="overdue-banner">⚠️ ${overdue} overdue task${overdue>1?'s':''} — owners: ${owners.join(', ')||'Unassigned'} — fix these first</div>`;
+  } else banner.innerHTML = '';
+
+  const filtered = tasks.filter(matchesFilter);
+  const groupLabel = taskFilter==='All' ? 'Open' : taskFilter;
+  document.getElementById('task-group-list').innerHTML =
+    `<div class="group-hdr">${groupLabel.toUpperCase()} — ${filtered.length}</div>` +
+    (filtered.length ? filtered.map(taskRowHtml).join('') : '<div style="color:var(--td);font-size:12px;padding:12px 0">Nothing here.</div>');
+
+  const badge = document.getElementById('task-badge');
+  badge.textContent = open;
+  badge.style.display = open ? 'inline-block' : 'none';
+}
+
+// ══════════════════════════════════════════════════════════
+// ROCKS
+// ══════════════════════════════════════════════════════════
+function addRock(){
+  const text = document.getElementById('new-rock-text').value.trim();
+  if (!text) return;
+  const owner = document.getElementById('new-rock-owner').value.trim();
+  const due = document.getElementById('new-rock-due').value;
+  rocks.push({ id: Date.now(), text, owner, due, onTrack:true });
+  document.getElementById('new-rock-text').value = '';
+  document.getElementById('new-rock-owner').value = '';
+  document.getElementById('new-rock-due').value = '';
+  saveAllData();
+  renderRocks();
+}
+function toggleRockTrack(id){ const r = rocks.find(x=>x.id===id); if (r){ r.onTrack = !r.onTrack; saveAllData(); renderRocks(); } }
+function deleteRock(id){ rocks = rocks.filter(x=>x.id!==id); saveAllData(); renderRocks(); }
+function rockRowHtml(r){
+  return `<div class="rock-row">
+    <div class="trow-title">${r.text}</div>
+    <div style="font-size:11px;color:var(--td)">${r.owner||'—'}</div>
+    <div style="font-size:11px;color:var(--td);font-family:'DM Mono',monospace">${r.due||'—'}</div>
+    <button class="track-chip ${r.onTrack?'on':'off'}" onclick="toggleRockTrack(${r.id})">${r.onTrack?'On Track':'Off Track'}</button>
+    <button class="trow-del" onclick="deleteRock(${r.id})">✕</button>
+  </div>`;
+}
+function renderRocks(){
+  const html = rocks.length ? rocks.map(rockRowHtml).join('') : '<div style="color:var(--td);font-size:12px;padding:8px 0">No rocks set for this quarter yet.</div>';
+  const el = document.getElementById('step-rocks-list'); if (el) el.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════
+// ISSUES (IDS)
+// ══════════════════════════════════════════════════════════
+const ISSUE_STATES = ['identified','discussing','solved'];
+function addIssue(){
+  const text = document.getElementById('new-issue-text').value.trim();
+  if (!text) return;
+  const owner = document.getElementById('new-issue-owner').value.trim();
+  issues.push({ id: Date.now(), text, owner, status:'identified' });
+  document.getElementById('new-issue-text').value = '';
+  document.getElementById('new-issue-owner').value = '';
+  saveAllData();
+  renderIssues();
+}
+function cycleIssue(id){
+  const i = issues.find(x=>x.id===id);
+  if (i){ const idx = ISSUE_STATES.indexOf(i.status); i.status = ISSUE_STATES[(idx+1)%ISSUE_STATES.length]; saveAllData(); renderIssues(); }
+}
+function deleteIssue(id){ issues = issues.filter(x=>x.id!==id); saveAllData(); renderIssues(); }
+function issueRowHtml(i){
+  const label = i.status.charAt(0).toUpperCase()+i.status.slice(1);
+  return `<div class="issue-row">
+    <div class="trow-title">${i.text}</div>
+    <div style="font-size:11px;color:var(--td)">${i.owner||'—'}</div>
+    <button class="status-btn ${i.status}" onclick="cycleIssue(${i.id})">${label}</button>
+    <button class="trow-del" onclick="deleteIssue(${i.id})">✕</button>
+  </div>`;
+}
+function renderIssues(){
+  const html = issues.length ? issues.map(issueRowHtml).join('') : '<div style="color:var(--td);font-size:12px;padding:8px 0">No open issues. Nice.</div>';
+  const el = document.getElementById('step-issues-list'); if (el) el.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════
+// OPS: EQUIPMENT / PM SCHEDULE / MAINTENANCE ISSUES / CHECKS
+// ══════════════════════════════════════════════════════════
+const OPS_SUBTABS = [
+  {key:'equipment', label:'Equipment'},
+  {key:'pm', label:'PM Schedule'},
+  {key:'maint', label:'Maintenance Issues'},
+  {key:'checks', label:'Truck/Equipment Checks'},
+];
+function showOpsSub(key){ opsSubTab = key; renderOpsSubtabs(); renderOpsSubContent(); }
+function renderOpsSubtabs(){
+  const el = document.getElementById('ops-subtabs');
+  if (!el) return;
+  el.innerHTML = OPS_SUBTABS.map(t=>`<button class="pill ${opsSubTab===t.key?'active':''}" onclick="showOpsSub('${t.key}')">${t.label}</button>`).join('');
+}
+function equipmentOptions(selected){
+  if (!equipment.length) return '<option value="">No equipment added yet</option>';
+  return equipment.map(e=>`<option ${e.name===selected?'selected':''}>${e.name}</option>`).join('');
+}
+
+// ── Equipment registry ──
+function addEquipment(){
+  const name = document.getElementById('new-eq-name').value.trim();
+  if (!name) return;
+  const type = document.getElementById('new-eq-type').value;
+  const idNum = document.getElementById('new-eq-id').value.trim();
+  equipment.push({ id: Date.now(), name, type, idNum, status: 'Active' });
+  document.getElementById('new-eq-name').value = '';
+  document.getElementById('new-eq-id').value = '';
+  saveAllData();
+  renderOpsSubContent();
+}
+function cycleEqStatus(id){
+  const e = equipment.find(x=>x.id===id);
+  if (!e) return;
+  const order = ['Active','In Shop','Down'];
+  e.status = order[(order.indexOf(e.status)+1)%order.length];
+  saveAllData(); renderOpsSubContent();
+}
+function deleteEquipment(id){ equipment = equipment.filter(x=>x.id!==id); saveAllData(); renderOpsSubContent(); }
+function eqStatusClass(s){ return s==='Active' ? 'ok' : s==='In Shop' ? 'soon' : 'overdue'; }
+
+// ── PM Schedule ──
+function addPM(){
+  const eq = document.getElementById('new-pm-eq').value;
+  const task = document.getElementById('new-pm-task').value.trim();
+  if (!eq || !task) return;
+  const interval = parseInt(document.getElementById('new-pm-interval').value) || 90;
+  const lastDone = document.getElementById('new-pm-lastdone').value || todayStr();
+  const nextDue = addDays(lastDone, interval);
+  pmSchedule.push({ id: Date.now(), equipment: eq, task, interval, lastDone, nextDue });
+  document.getElementById('new-pm-task').value = '';
+  saveAllData();
+  renderOpsSubContent();
+}
+function markPMDone(id){
+  const p = pmSchedule.find(x=>x.id===id);
+  if (!p) return;
+  p.lastDone = todayStr();
+  p.nextDue = addDays(p.lastDone, p.interval);
+  saveAllData(); renderOpsSubContent();
+}
+function deletePM(id){ pmSchedule = pmSchedule.filter(x=>x.id!==id); saveAllData(); renderOpsSubContent(); }
+function addDays(dateStr, days){ const d = new Date(dateStr); d.setDate(d.getDate()+days); return d.toISOString().split('T')[0]; }
+function pmStatus(nextDue){
+  const today = todayStr();
+  const soon = addDays(today, 7);
+  if (nextDue < today) return 'overdue';
+  if (nextDue <= soon) return 'soon';
+  return 'ok';
+}
+
+// ── Maintenance Issues ──
+function addMaintIssue(){
+  const eq = document.getElementById('new-mi-eq').value;
+  const text = document.getElementById('new-mi-text').value.trim();
+  if (!text) return;
+  const priority = document.getElementById('new-mi-priority').value;
+  maintIssues.push({ id: Date.now(), equipment: eq, text, priority, status: 'Reported' });
+  document.getElementById('new-mi-text').value = '';
+  saveAllData();
+  renderOpsSubContent();
+}
+const MAINT_STATES = ['Reported','In Progress','Resolved'];
+function cycleMaintStatus(id){
+  const m = maintIssues.find(x=>x.id===id);
+  if (!m) return;
+  m.status = MAINT_STATES[(MAINT_STATES.indexOf(m.status)+1)%MAINT_STATES.length];
+  saveAllData(); renderOpsSubContent();
+}
+function deleteMaintIssue(id){ maintIssues = maintIssues.filter(x=>x.id!==id); saveAllData(); renderOpsSubContent(); }
+
+// ── Truck/Equipment Checks ──
+function addCheck(){
+  const eq = document.getElementById('new-chk-eq').value;
+  const operator = document.getElementById('new-chk-operator').value.trim();
+  if (!eq || !operator) return;
+  const result = document.getElementById('new-chk-result').value;
+  const notes = document.getElementById('new-chk-notes').value.trim();
+  truckChecks.unshift({ id: Date.now(), date: todayStr(), equipment: eq, operator, result, notes });
+  document.getElementById('new-chk-operator').value = '';
+  document.getElementById('new-chk-notes').value = '';
+  saveAllData();
+  renderOpsSubContent();
+}
+function deleteCheck(id){ truckChecks = truckChecks.filter(x=>x.id!==id); saveAllData(); renderOpsSubContent(); }
+
+function renderOpsSubContent(){
+  const el = document.getElementById('ops-sub-content');
+  if (!el) return;
+
+  if (opsSubTab === 'equipment'){
+    el.innerHTML = `
+      <div class="add-row">
+        <input class="tinp" id="new-eq-name" placeholder="Equipment name (e.g. Truck 3)">
+        <select class="tsel" id="new-eq-type"><option>Truck</option><option>Trailer</option><option>Chainsaw</option><option>Mower</option><option>Chipper</option><option>Stump Grinder</option><option>Other</option></select>
+        <input class="tinp" id="new-eq-id" placeholder="ID / VIN" style="max-width:140px">
+        <button class="tbtn green" onclick="addEquipment()">+ Add</button>
+      </div>
+      <div>${equipment.length ? equipment.map(e=>`
+        <div class="eq-row">
+          <div class="trow-title">${e.name}</div>
+          <div style="font-size:11px;color:var(--td)">${e.type}</div>
+          <div style="font-size:11px;color:var(--td);font-family:'DM Mono',monospace">${e.idNum||'—'}</div>
+          <button class="pm-chip ${eqStatusClass(e.status)}" onclick="cycleEqStatus(${e.id})">${e.status}</button>
+          <button class="trow-del" onclick="deleteEquipment(${e.id})">✕</button>
+        </div>`).join('') : '<div style="color:var(--td);font-size:12px;padding:8px 0">No equipment added yet.</div>'}</div>`;
+  }
+
+  else if (opsSubTab === 'pm'){
+    el.innerHTML = `
+      <div class="add-row">
+        <select class="tsel" id="new-pm-eq">${equipmentOptions()}</select>
+        <input class="tinp" id="new-pm-task" placeholder="Task (e.g. Oil Change)">
+        <input class="tinp" id="new-pm-interval" type="number" placeholder="Interval (days)" style="max-width:130px" value="90">
+        <input class="tinp" id="new-pm-lastdone" type="date" style="max-width:150px">
+        <button class="tbtn green" onclick="addPM()">+ Add</button>
+      </div>
+      <div>${pmSchedule.length ? pmSchedule.map(p=>`
+        <div class="pm-row">
+          <div class="trow-title">${p.equipment}</div>
+          <div style="font-size:12px;color:var(--tx)">${p.task}</div>
+          <div style="font-size:11px;color:var(--td)">every ${p.interval}d</div>
+          <div style="font-size:11px;color:var(--td);font-family:'DM Mono',monospace">last: ${p.lastDone}</div>
+          <span class="pm-chip ${pmStatus(p.nextDue)}">due ${p.nextDue}</span>
+          <button class="tbtn" onclick="markPMDone(${p.id})">✓ Done</button>
+          <button class="trow-del" onclick="deletePM(${p.id})">✕</button>
+        </div>`).join('') : '<div style="color:var(--td);font-size:12px;padding:8px 0">No PM schedule set up yet.</div>'}</div>`;
+  }
+
+  else if (opsSubTab === 'maint'){
+    el.innerHTML = `
+      <div class="add-row">
+        <select class="tsel" id="new-mi-eq">${equipmentOptions()}</select>
+        <input class="tinp" id="new-mi-text" placeholder="Issue description...">
+        <select class="tsel" id="new-mi-priority"><option>Low</option><option selected>Medium</option><option>High</option></select>
+        <button class="tbtn green" onclick="addMaintIssue()">+ Add</button>
+      </div>
+      <div>${maintIssues.length ? maintIssues.map(m=>`
+        <div class="mi-row">
+          <div style="font-size:12px;color:var(--td)">${m.equipment||'—'}</div>
+          <div class="trow-title">${m.text}</div>
+          <span class="chip prio-${(m.priority||'').toLowerCase()}">${m.priority}</span>
+          <button class="status-btn ${m.status==='Reported'?'identified':m.status==='In Progress'?'discussing':'solved'}" onclick="cycleMaintStatus(${m.id})">${m.status}</button>
+          <span></span>
+          <button class="trow-del" onclick="deleteMaintIssue(${m.id})">✕</button>
+        </div>`).join('') : '<div style="color:var(--td);font-size:12px;padding:8px 0">No maintenance issues reported.</div>'}</div>`;
+  }
+
+  else if (opsSubTab === 'checks'){
+    el.innerHTML = `
+      <div class="add-row">
+        <select class="tsel" id="new-chk-eq">${equipmentOptions()}</select>
+        <input class="tinp" id="new-chk-operator" placeholder="Operator name">
+        <select class="tsel" id="new-chk-result"><option>Pass</option><option>Fail</option></select>
+        <input class="tinp" id="new-chk-notes" placeholder="Notes (optional)" style="flex:1">
+        <button class="tbtn green" onclick="addCheck()">+ Log Check</button>
+      </div>
+      <div>${truckChecks.length ? truckChecks.map(c=>`
+        <div class="chk-row">
+          <div style="font-size:11px;color:var(--td);font-family:'DM Mono',monospace">${c.date}</div>
+          <div class="trow-title">${c.equipment||'—'}</div>
+          <div style="font-size:11px;color:var(--td)">${c.operator}</div>
+          <span class="pm-chip ${c.result==='Pass'?'ok':'overdue'}">${c.result}</span>
+          <div style="font-size:11px;color:var(--td)">${c.notes||'—'}</div>
+          <button class="trow-del" onclick="deleteCheck(${c.id})">✕</button>
+        </div>`).join('') : '<div style="color:var(--td);font-size:12px;padding:8px 0">No checks logged yet.</div>'}</div>`;
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// KPI TABLES / CHARTS
+// ══════════════════════════════════════════════════════════
+function sparkline(key, kpi){
+  const trend = ['w1','w2','w3','w4'].map(w=>getW(key,w));
+  const status = getStatus(trend[3], kpi);
+  const color = status==='g' ? '#5CB800' : status==='a' ? '#FFB800' : trend[3] ? '#FF4444' : '#4A5E58';
+  const max = Math.max(kpi.target, ...trend.filter(v=>v>0)) * 1.15 || 1;
+  const w=100,h=32,pts=trend.map((v,i)=> v>0 ? `${(i/3)*w},${h-(v/max)*h}` : null).filter(Boolean).join(' ');
+  return `<svg class="mini-chart" viewBox="0 0 ${w} ${h}"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+function renderKPITable(tab){
+  const kpis = KPIS[tab];
+  let rows = kpis.map(k=>{
+    const w1=getW(k.key,'w1'), w2=getW(k.key,'w2'), w3=getW(k.key,'w3'), w4=getW(k.key,'w4');
+    const status = w4 ? getStatus(w4,k) : 'n';
+    const chip = status==='g'?'<span class="status-chip st-g">On Target</span>':status==='a'?'<span class="status-chip st-a">Watch</span>':status==='r'?'<span class="status-chip st-r">Below Floor</span>':'<span class="status-chip st-n">No Data</span>';
+    return `<tr>
+      <td class="kpi-name">${k.label}</td>
+      <td class="kpi-floor">${k.floor.toLocaleString()}</td>
+      <td class="kpi-target">${k.target.toLocaleString()}</td>
+      <td><input type="number" class="actual-inp ${w1?getStatus(w1,k):''}" value="${w1||''}" onchange="setW('${k.key}','w1',this.value);debouncedSave();renderAll()"></td>
+      <td><input type="number" class="actual-inp ${w2?getStatus(w2,k):''}" value="${w2||''}" onchange="setW('${k.key}','w2',this.value);debouncedSave();renderAll()"></td>
+      <td><input type="number" class="actual-inp ${w3?getStatus(w3,k):''}" value="${w3||''}" onchange="setW('${k.key}','w3',this.value);debouncedSave();renderAll()"></td>
+      <td><input type="number" class="actual-inp ${w4?getStatus(w4,k):''}" value="${w4||''}" onchange="setW('${k.key}','w4',this.value);debouncedSave();renderAll()"></td>
+      <td>${sparkline(k.key,k)}</td>
+      <td>${chip}</td>
+    </tr>`;
+  }).join('');
+  const html = `<div class="kpi-section"><div class="kpi-sec-hdr"><div class="kpi-sec-name">${tab}</div></div>
+    <table class="kpi-table"><thead><tr><th>Metric</th><th>Floor</th><th>Target</th><th>W1</th><th>W2</th><th>W3</th><th>W4 (Current)</th><th>Trend</th><th>Status</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+  const targets = [document.getElementById('kpi-'+tab), document.getElementById('kpi-'+tab+'-standalone')].filter(Boolean);
+  targets.forEach(el=>el.innerHTML = html);
+}
+function renderChartsInto(containerId, tabs){
+  const grid = document.getElementById(containerId);
+  if (!grid) return;
+  let html = '';
+  tabs.forEach(tab=>{
+    KPIS[tab].forEach((kpi,idx)=>{
+      const id = `chart-${containerId}-${tab}-${idx}-${kpi.key}`;
+      html += `<div class="chart-card"><div class="chart-title">${kpi.label}</div><div class="chart-wrap"><canvas id="${id}"></canvas></div></div>`;
+    });
+  });
+  grid.innerHTML = html;
+  tabs.forEach(tab=>{
+    KPIS[tab].forEach((kpi,idx)=>{
+      const id = `chart-${containerId}-${tab}-${idx}-${kpi.key}`;
+      const ctx = document.getElementById(id);
+      if (!ctx) return;
+      const trend = ['w1','w2','w3','w4'].map(w=>getW(kpi.key,w));
+      chartInstances[id] = new Chart(ctx, {
+        type:'line',
+        data:{ labels:['W1','W2','W3','W4'], datasets:[
+          { label:kpi.label, data:trend, borderColor:'#5CB800', backgroundColor:'#5CB80022', tension:.3, fill:true },
+          { label:'Target', data:[kpi.target,kpi.target,kpi.target,kpi.target], borderColor:'#7c3aed', borderDash:[4,3], pointRadius:0 },
+        ]},
+        options:{ responsive:true, maintainAspectRatio:false,
+          plugins:{ legend:{labels:{color:'#8FA8A0',font:{size:10}}} },
+          scales:{ x:{ticks:{color:'#8FA8A0'},grid:{color:'rgba(255,255,255,.05)'}}, y:{ticks:{color:'#8FA8A0'},grid:{color:'rgba(255,255,255,.05)'}} }
+        }
+      });
+    });
+  });
+}
+function renderCharts(){
+  Object.values(chartInstances).forEach(c=>c.destroy());
+  chartInstances = {};
+  renderChartsInto('chart-grid', ['Sales','Ops']);
+  renderChartsInto('sales-chart-grid', ['Sales']);
+  renderChartsInto('ops-chart-grid', ['Ops']);
+}
+async function shiftWeeks(){
+  const allKeys = new Set();
+  ['Sales','Ops'].forEach(tab => KPIS[tab].forEach(k=>allKeys.add(k.key)));
+  allKeys.forEach(key=>{
+    data[`${key}_w1`] = getW(key,'w2');
+    data[`${key}_w2`] = getW(key,'w3');
+    data[`${key}_w3`] = getW(key,'w4');
+    data[`${key}_w4`] = 0;
+  });
+  await saveAllData();
+  renderAll();
+}
+
+// ══════════════════════════════════════════════════════════
+// L10 MEETING STEPPER
+// ══════════════════════════════════════════════════════════
+function fmtClock(sec){ sec = Math.max(0,Math.round(sec)); const m=Math.floor(sec/60), s=sec%60; return `${m}:${s.toString().padStart(2,'0')}`; }
+
+function renderAgendaSidebar(){
+  const kpiTotal = KPIS.Sales.length + KPIS.Ops.length;
+  const kpiGreen = [...KPIS.Sales,...KPIS.Ops].filter(k=>{ const v=getW(k.key,'w4'); return v && getStatus(v,k)==='g'; }).length;
+  const rocksOn = rocks.filter(r=>r.onTrack).length;
+  const openIssues = issues.filter(i=>i.status!=='solved').length;
+  const openTodos = tasks.filter(t=>!t.done).length;
+
+  let html = AGENDA.map((step,i)=>`
+    <div class="agenda-item ${i===stepIdx?'active':''}" onclick="goToStep(${i})">
+      <div class="anum">${i+1}</div>
+      <div class="atext"><div class="atitle">${step.label}</div><div class="atime">${step.min} min</div></div>
+    </div>`).join('');
+
+  html += `<div class="agenda-stats">
+    <div class="astat-row"><span>Rocks OT</span><b>${rocksOn}/${rocks.length}</b></div>
+    <div class="astat-row ${openIssues?'warn':''}"><span>Open issues</span><b>${openIssues}</b></div>
+    <div class="astat-row"><span>Open to-dos</span><b>${openTodos}</b></div>
+    <div class="astat-row"><span>KPIs green</span><b>${kpiGreen}/${kpiTotal}</b></div>
+  </div>
+  <button class="save-meeting-btn" onclick="saveMeeting()">✓ Save Meeting</button>
+  <button class="save-meeting-btn" style="background:var(--s3);color:var(--tx);margin-top:8px" onclick="exportAgenda()">📄 Export Agenda</button>`;
+
+  document.getElementById('agenda-sidebar').innerHTML = html;
+}
+
+function goToStep(i){
+  stepIdx = i;
+  segSec = AGENDA[i].min*60;
+  renderAgendaSidebar();
+  renderStepMain();
+}
+function nextStep(){ if (stepIdx < AGENDA.length-1) goToStep(stepIdx+1); }
+
+function toggleTimer(){
+  timerRunning = !timerRunning;
+  document.getElementById('timer-startbtn').textContent = timerRunning ? '⏸ Pause' : '▶ Start';
+  if (timerRunning){
+    timerInterval = setInterval(()=>{
+      totalSec++; segSec = Math.max(0, segSec-1);
+      document.getElementById('timer-total').textContent = fmtClock(totalSec);
+      document.getElementById('timer-segment').textContent = fmtClock(segSec);
+    }, 1000);
+  } else clearInterval(timerInterval);
+}
+function resetTimer(){
+  timerRunning = false; clearInterval(timerInterval);
+  document.getElementById('timer-startbtn').textContent = '▶ Start';
+  totalSec = 0; segSec = AGENDA[stepIdx].min*60;
+  document.getElementById('timer-total').textContent = fmtClock(totalSec);
+  document.getElementById('timer-segment').textContent = fmtClock(segSec);
+}
+
+function saveSegue(person, val){ notes.segueByPerson[person] = val; debouncedSave(); }
+function addParticipant(){
+  const el = document.getElementById('new-participant');
+  const name = el.value.trim();
+  if (!name) return;
+  participants.push(name);
+  el.value = '';
+  saveAllData();
+  renderStepMain();
+}
+function removeParticipant(name){
+  participants = participants.filter(p=>p!==name);
+  delete notes.segueByPerson[name];
+  saveAllData();
+  renderStepMain();
+}
+function saveHeadlines(){ notes.headlines = document.getElementById('note-headlines').value; debouncedSave(); }
+function saveCascade(){ notes.cascade = document.getElementById('note-cascade').value; debouncedSave(); }
+function saveRating(){ notes.rating = document.getElementById('note-rating').value; debouncedSave(); }
+
+function renderStepMain(){
+  const step = AGENDA[stepIdx];
+  const main = document.getElementById('meeting-main');
+
+  if (step.key === 'segue'){
+    main.innerHTML = `
+      <div class="step-title">SEGUE — 5 min</div>
+      <div class="step-sub">One good thing — personal or professional. 30 sec each.</div>
+      <div class="segue-grid" id="segue-grid"></div>
+      <div class="add-participant">
+        <input class="tinp" id="new-participant" placeholder="Add participant..." style="flex:1">
+        <button class="tbtn green" onclick="addParticipant()">+ Add</button>
+      </div>`;
+    document.getElementById('segue-grid').innerHTML = participants.map((p,i)=>`
+      <div class="segue-card">
+        <h4>${p}<button onclick="removeParticipant('${p}')">✕</button></h4>
+        <div style="display:flex;gap:6px;align-items:flex-start">
+          <textarea id="segue-ta-${i}" placeholder="One good thing..." onchange="saveSegue('${p}', this.value)">${notes.segueByPerson[p]||''}</textarea>
+          <button class="mic-btn" onclick="startVoiceIntoSegue('segue-ta-${i}', '${p}', this)">🎤</button>
+        </div>
+      </div>`).join('');
+  }
+
+  else if (step.key === 'scorecard'){
+    const allKpis = [...KPIS.Sales, ...KPIS.Ops];
+    const reds = allKpis.filter(k => getW(k.key,'w4') && getStatus(getW(k.key,'w4'),k)==='r');
+    const ambers = allKpis.filter(k => getW(k.key,'w4') && getStatus(getW(k.key,'w4'),k)==='a');
+    main.innerHTML = `
+      <div class="step-title">SCORECARD — 10 min</div>
+      <div class="step-sub">Full detail lives on the Scorecard tab. Quick status here:</div>
+      <div style="display:flex;gap:16px;font-family:'Barlow Condensed',sans-serif;font-weight:700;margin-bottom:16px">
+        <span style="color:#5CB800">${allKpis.length-reds.length-ambers.length} On Target</span>
+        <span style="color:var(--amb)">${ambers.length} Watch</span>
+        <span style="color:var(--red)">${reds.length} Below Floor</span>
+      </div>
+      ${reds.length ? `<div class="group-hdr">Below Floor</div>` + reds.map(k=>`<div class="trow"><div class="trow-body"><div class="trow-title">${k.label}</div><div class="chip-row"><span class="chip prio-high">${getW(k.key,'w4').toLocaleString()} vs floor ${k.floor.toLocaleString()}</span></div></div></div>`).join('') : ''}
+      ${ambers.length ? `<div class="group-hdr">Watch</div>` + ambers.map(k=>`<div class="trow ok"><div class="trow-body"><div class="trow-title">${k.label}</div><div class="chip-row"><span class="chip prio-medium">${getW(k.key,'w4').toLocaleString()} / target ${k.target.toLocaleString()}</span></div></div></div>`).join('') : ''}
+      ${!reds.length && !ambers.length ? '<div style="color:var(--g);font-size:13px">✅ All tracked KPIs are on target or above floor.</div>' : ''}`;
+  }
+
+  else if (step.key === 'rocks'){
+    main.innerHTML = `
+      <div class="step-title">ROCK REVIEW — 5 min</div>
+      <div class="step-sub">The 3–7 priorities for this quarter. On track or off track — no in-between.</div>
+      <div class="add-row">
+        <input class="tinp" id="new-rock-text" placeholder="Rock / goal...">
+        <button class="mic-btn" onclick="startVoiceInto('new-rock-text', this)">🎤</button>
+        <input class="tinp" id="new-rock-owner" placeholder="Owner" style="max-width:130px">
+        <input class="tinp" id="new-rock-due" type="date" style="max-width:150px">
+        <button class="tbtn green" onclick="addRock()">+ Add Rock</button>
+      </div>
+      <div id="step-rocks-list"></div>`;
+    renderRocks();
+  }
+
+  else if (step.key === 'headlines'){
+    main.innerHTML = `
+      <div class="step-title">CUSTOMER / EMPLOYEE HEADLINES — 5 min</div>
+      <div class="step-sub">Wins, losses, employee news.</div>
+      <textarea class="note-area" id="note-headlines" onchange="saveHeadlines()">${notes.headlines||''}</textarea>
+      <button class="mic-btn" style="margin-top:8px" onclick="startVoiceInto('note-headlines', this)">🎤 Dictate</button>`;
+  }
+
+  else if (step.key === 'todos'){
+    const open = tasks.filter(t=>!t.done);
+    main.innerHTML = `
+      <div class="step-title">TO-DO LIST REVIEW — 5 min</div>
+      <div class="step-sub">${open.length} open item${open.length!==1?'s':''}. Full management on the Task Tracker tab.</div>
+      <div id="step-todos-list">${open.length ? open.map(taskRowHtml).join('') : '<div style="color:var(--td);font-size:12px">Nothing open. Nice.</div>'}</div>`;
+  }
+
+  else if (step.key === 'ids'){
+    main.innerHTML = `
+      <div class="step-title">IDS — IDENTIFY, DISCUSS, SOLVE — 55 min</div>
+      <div class="step-sub">Click a status chip to cycle it: Identified → Discussing → Solved.</div>
+      <div class="add-row">
+        <input class="tinp" id="new-issue-text" placeholder="Issue...">
+        <button class="mic-btn" onclick="startVoiceInto('new-issue-text', this)">🎤</button>
+        <input class="tinp" id="new-issue-owner" placeholder="Owner" style="max-width:130px">
+        <button class="tbtn green" onclick="addIssue()">+ Add Issue</button>
+      </div>
+      <div id="step-issues-list"></div>`;
+    renderIssues();
+  }
+
+  else if (step.key === 'conclude'){
+    main.innerHTML = `
+      <div class="step-title">CONCLUDE — 5 min</div>
+      <div class="step-sub">Recap new to-dos, cascading message, rate the meeting.</div>
+      <textarea class="note-area" id="note-cascade" placeholder="Cascading message for the team..." onchange="saveCascade()">${notes.cascade||''}</textarea>
+      <button class="mic-btn" style="margin-top:8px" onclick="startVoiceInto('note-cascade', this)">🎤 Dictate</button>
+      <div style="margin-top:10px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:11px;color:var(--td);text-transform:uppercase;letter-spacing:1px">Meeting Rating (1-10):</span>
+        <input class="rate-inp" id="note-rating" type="number" min="1" max="10" value="${notes.rating||''}" onchange="saveRating()">
+      </div>
+      <div class="sec-title" style="margin-top:28px">📚 Past Meetings</div>
+      <div id="meeting-history"></div>`;
+    renderMeetingHistory();
+  }
+}
+
+// ── SAVE / EXPORT MEETING ──
+function buildAgendaText(snapshot){
+  const s = snapshot || { date: new Date().toISOString().split('T')[0], notes, rocks, issues, tasks };
+  let out = '';
+  out += `TRAILBLAZERS — L10 MEETING\n${s.date}\n${'='.repeat(40)}\n\n`;
+  out += `1. SEGUE — GOOD NEWS\n`;
+  const sb = s.notes.segueByPerson || {};
+  out += Object.keys(sb).length ? Object.entries(sb).map(([p,v])=>`  ${p}: ${v||'—'}`).join('\n')+'\n\n' : '  (none)\n\n';
+  const allKpis = [...KPIS.Sales, ...KPIS.Ops];
+  const reds = allKpis.filter(k => getW(k.key,'w4') && getStatus(getW(k.key,'w4'),k)==='r').length;
+  const ambers = allKpis.filter(k => getW(k.key,'w4') && getStatus(getW(k.key,'w4'),k)==='a').length;
+  out += `2. SCORECARD REVIEW\n${allKpis.length-reds-ambers} On Target, ${ambers} Watch, ${reds} Below Floor\n\n`;
+  out += `3. ROCK REVIEW\n` + (s.rocks.length ? s.rocks.map(r=>`  [${r.onTrack?'ON TRACK':'OFF TRACK'}] ${r.text} (${r.owner||'—'}${r.due?', due '+r.due:''})`).join('\n')+'\n\n' : '  (none)\n\n');
+  out += `4. CUSTOMER / EMPLOYEE HEADLINES\n${(s.notes.headlines||'—')}\n\n`;
+  out += `5. TO-DO LIST REVIEW\n` + (s.tasks.length ? s.tasks.map(t=>`  [${t.done?'x':' '}] ${t.text} (${t.owner||'—'}${t.due?', due '+t.due:''})`).join('\n')+'\n\n' : '  (none)\n\n');
+  out += `6. IDS — ISSUES\n` + (s.issues.length ? s.issues.map(i=>`  [${i.status.toUpperCase()}] ${i.text} (${i.owner||'—'})`).join('\n')+'\n\n' : '  (none)\n\n');
+  out += `7. CONCLUDE\nCascading message: ${(s.notes.cascade||'—')}\nMeeting rating: ${(s.notes.rating||'—')}/10\n`;
+  return out;
+}
+function downloadText(filename, text){
+  const blob = new Blob([text], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = filename; a.click();
+}
+function exportAgenda(){ downloadText(`trailblazers-l10-agenda-${new Date().toISOString().split('T')[0]}.txt`, buildAgendaText()); }
+function saveMeeting(){
+  const date = new Date().toISOString().split('T')[0];
+  const snapshot = {
+    date,
+    notes: { segueByPerson: JSON.parse(JSON.stringify(notes.segueByPerson||{})), headlines: notes.headlines, cascade: notes.cascade, rating: notes.rating },
+    rocks: JSON.parse(JSON.stringify(rocks)), issues: JSON.parse(JSON.stringify(issues)), tasks: JSON.parse(JSON.stringify(tasks)),
+  };
+  meetingHistory.push(snapshot);
+  saveAllData();
+  renderMeetingHistory();
+  toast('Meeting saved');
+}
+function exportPastMeeting(idx){ const s = meetingHistory[idx]; downloadText(`trailblazers-l10-agenda-${s.date}.txt`, buildAgendaText(s)); }
+function renderMeetingHistory(){
+  const el = document.getElementById('meeting-history'); if (!el) return;
+  if (!meetingHistory.length){ el.innerHTML = '<div style="color:var(--td);font-size:12px;padding:8px 0">No meetings saved yet.</div>'; return; }
+  el.innerHTML = meetingHistory.slice().reverse().map((s,revIdx)=>{
+    const idx = meetingHistory.length - 1 - revIdx;
+    return `<div class="rock-row" style="grid-template-columns:1fr 100px auto">
+      <div class="trow-title">${s.date}</div>
+      <div style="font-size:11px;color:var(--td)">Rating: ${s.notes.rating||'—'}/10</div>
+      <button class="tbtn" onclick="exportPastMeeting(${idx})">📄 Export</button>
+    </div>`;
+  }).join('');
+}
+function toast(msg){
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:20px;right:20px;background:var(--gbg);border:1px solid var(--gd);color:var(--g);padding:10px 16px;border-radius:4px;font-size:12px;z-index:999';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 2500);
+}
+
+function renderAll(){
+  try { renderKPITable('Sales'); } catch(e){ console.error('renderKPITable Sales', e); }
+  try { renderKPITable('Ops'); } catch(e){ console.error('renderKPITable Ops', e); }
+  try { renderCharts(); } catch(e){ console.error('renderCharts', e); }
+  try { renderTasks(); } catch(e){ console.error('renderTasks', e); }
+  try { renderAgendaSidebar(); } catch(e){ console.error('renderAgendaSidebar', e); document.getElementById('agenda-sidebar').innerHTML = `<div style="color:var(--red);font-size:11px;padding:16px">Sidebar error: ${e.message}</div>`; }
+  try { renderStepMain(); } catch(e){ console.error('renderStepMain', e); document.getElementById('meeting-main').innerHTML = `<div style="color:var(--red);font-size:12px">Meeting step error: ${e.message}<br>Open the browser console (F12) and send me what it says.</div>`; }
+  try { renderOpsSubtabs(); renderOpsSubContent(); } catch(e){ console.error('renderOps', e); }
+}
+
+document.getElementById('timer-segment').textContent = fmtClock(segSec);
+loadData();
+</script>
+<script>
+/* ═══ ROUTES (Lawn & Snow) — Trailblazers route command, stored in Supabase table route_runs ═══ */
+(function(){
+const ROUTES = {"snow": [{"id": "snow01", "n": 1, "town": "River Falls", "area": "North / Main St", "cust": "Gartner Properties", "addr": "265 Mound View Rd, River Falls, WI", "notes": "Commercial - Trailblazers office bldg", "price": 1500, "unit": "month", "pn": "$1,500/month (~$500/visit)", "salt": false, "lat": 44.86946, "lng": -92.619038, "rev": 500, "bud": 150, "jobber": "https://secure.getjobber.com/clients/150630732", "phone": ""}, {"id": "snow02", "n": 2, "town": "River Falls", "area": "North / Main St", "cust": "Neil Anderson #2", "addr": "717 N Main St, River Falls, WI", "notes": "", "price": 60, "unit": "push", "pn": "", "salt": false, "lat": 44.869623, "lng": -92.62222, "rev": 60, "bud": 60, "jobber": "https://secure.getjobber.com/clients/139006008", "phone": "715-808-4655"}, {"id": "snow03", "n": 3, "town": "River Falls", "area": "North / Main St", "cust": "Westwind Supper Club", "addr": "709 N Main St, River Falls, WI", "notes": "Commercial - clear before open", "price": 170, "unit": "push", "pn": "", "salt": true, "lat": 44.868471, "lng": -92.622308, "rev": 170, "bud": 170, "jobber": "https://secure.getjobber.com/clients/148286914", "phone": "(651) 442-7434"}, {"id": "snow04", "n": 4, "town": "River Falls", "area": "North / Main St", "cust": "American Legion", "addr": "701 N Main St, River Falls, WI", "notes": "Commercial + salt", "price": 110, "unit": "push", "pn": "", "salt": true, "lat": 44.867399, "lng": -92.622338, "rev": 110, "bud": 110, "jobber": "https://secure.getjobber.com/clients/138888455", "phone": "715-410-7937"}, {"id": "snow05", "n": 5, "town": "River Falls", "area": "North / Main St", "cust": "Brant Johnson", "addr": "707 St Croix St, River Falls, WI", "notes": "", "price": 85, "unit": "push", "pn": "", "salt": false, "lat": 44.867942, "lng": -92.623513, "rev": 85, "bud": 85, "jobber": "https://secure.getjobber.com/clients/148897342", "phone": "(715) 338-9111"}, {"id": "snow06", "n": 6, "town": "River Falls", "area": "North / Main St", "cust": "Neil Anderson #1", "addr": "951 E Division St, River Falls, WI", "notes": "Veterans Memorial - snowblow/shovel", "price": 60, "unit": "push", "pn": "", "salt": false, "lat": 44.864546, "lng": -92.614586, "rev": 60, "bud": 60, "jobber": "https://secure.getjobber.com/clients/139006008", "phone": "715-808-4655"}, {"id": "snow07", "n": 7, "town": "River Falls", "area": "East side", "cust": "Pat Gardner", "addr": "478 Westwood Dr, River Falls, WI", "notes": "", "price": 60, "unit": "push", "pn": "", "salt": false, "lat": 44.862907, "lng": -92.584695, "rev": 60, "bud": 60, "jobber": "https://secure.getjobber.com/clients/148655712", "phone": "(651) 248-9863"}, {"id": "snow08", "n": 8, "town": "River Falls", "area": "East side", "cust": "Fay Reinder", "addr": "929 Fairchild Dr, River Falls, WI", "notes": "", "price": 60, "unit": "push", "pn": "", "salt": false, "lat": 44.866167, "lng": -92.583155, "rev": 60, "bud": 60, "jobber": "https://secure.getjobber.com/clients/151201720", "phone": "(651) 380-6338"}, {"id": "snow09", "n": 9, "town": "River Falls", "area": "East side", "cust": "Matt Hieb", "addr": "950 Fairchild Dr, River Falls, WI", "notes": "", "price": 60, "unit": "push", "pn": "", "salt": false, "lat": 44.866818, "lng": -92.582512, "rev": 60, "bud": 60, "jobber": "https://secure.getjobber.com/clients/148656505", "phone": "(715) 760-0753"}, {"id": "snow10", "n": 10, "town": "River Falls", "area": "East side", "cust": "Don Davis", "addr": "959 Fairchild Dr, River Falls, WI", "notes": "", "price": 60, "unit": "push", "pn": "", "salt": false, "lat": 44.867089, "lng": -92.58315, "rev": 60, "bud": 60, "jobber": "https://secure.getjobber.com/clients/138888441", "phone": "715-386-7453"}, {"id": "snow11", "n": 11, "town": "River Falls", "area": "Downtown / South Main", "cust": "Toni Cadwallader", "addr": "222 N Main St, River Falls, WI", "notes": "Commercial - old BoJons bldg", "price": 160, "unit": "push", "pn": "", "salt": true, "lat": 44.860164, "lng": -92.624755, "rev": 160, "bud": 160, "jobber": "https://secure.getjobber.com/clients/136042500", "phone": "651-210-6544"}, {"id": "snow12", "n": 12, "town": "River Falls", "area": "Downtown / South Main", "cust": "Marlys McGarvey", "addr": "222 N 4th St, River Falls, WI", "notes": "", "price": 60, "unit": "push", "pn": "", "salt": false, "lat": 44.859218, "lng": -92.620378, "rev": 60, "bud": 60, "jobber": "https://secure.getjobber.com/clients/138888436", "phone": "651-402-3593"}, {"id": "snow13", "n": 13, "town": "River Falls", "area": "Downtown / South Main", "cust": "Susan Baker", "addr": "217 5th St, River Falls, WI", "notes": "", "price": 60, "unit": "push", "pn": "", "salt": false, "lat": 44.855608, "lng": -92.621428, "rev": 60, "bud": 60, "jobber": "https://secure.getjobber.com/clients/148655476", "phone": "(651) 261-9431"}, {"id": "snow14", "n": 14, "town": "River Falls", "area": "Downtown / South Main", "cust": "Scott Beske", "addr": "220 W Cascade Ave, River Falls, WI", "notes": "Sidewalks (per 1\")", "price": 120, "unit": "push (sidewalks, per 1\")", "pn": "", "salt": true, "lat": 44.853696, "lng": -92.631959, "rev": 120, "bud": 120, "jobber": "https://secure.getjobber.com/clients/136042429", "phone": "6128499274"}, {"id": "snow15", "n": 15, "town": "River Falls", "area": "Downtown / South Main", "cust": "Scott Beske", "addr": "220 W Cascade Ave, River Falls, WI", "notes": "Main Ends (3\"+)", "price": 300, "unit": "push (Main Ends, 3\"+)", "pn": "", "salt": false, "lat": 44.853696, "lng": -92.631959, "rev": 300, "bud": 300, "jobber": "https://secure.getjobber.com/clients/136042429", "phone": "6128499274"}, {"id": "snow16", "n": 16, "town": "River Falls", "area": "Southwest", "cust": "Joseph Kehl", "addr": "293 Nicole Ln, River Falls, WI", "notes": "Seasonal contract", "price": 885, "unit": "season", "pn": "$885/season (~$59/visit)", "salt": false, "lat": 44.846945, "lng": -92.632495, "rev": 59, "bud": 59, "jobber": "https://secure.getjobber.com/clients/148432608", "phone": "(651) 319-3081"}, {"id": "snow17", "n": 17, "town": "River Falls", "area": "Southwest", "cust": "Renee Jilek", "addr": "225 Hamilton Dr, River Falls, WI", "notes": "", "price": 60, "unit": "push", "pn": "", "salt": false, "lat": 44.842982, "lng": -92.632425, "rev": 60, "bud": 60, "jobber": "https://secure.getjobber.com/clients/138888458", "phone": "715-629-7347"}, {"id": "snow19", "n": 18, "town": "River Falls", "area": "West side", "cust": "Mary Lou Bean", "addr": "605 Sunset Ln, River Falls, WI", "notes": "", "price": 60, "unit": "push", "pn": "", "salt": false, "lat": 44.865977, "lng": -92.632531, "rev": 60, "bud": 60, "jobber": "https://secure.getjobber.com/clients/148654401", "phone": "(651) 261-9431"}, {"id": "snow20", "n": 19, "town": "River Falls", "area": "West side", "cust": "Jackie Lafave", "addr": "841 Pine Ridge Terrace, River Falls, WI", "notes": "", "price": 60, "unit": "push", "pn": "", "salt": false, "lat": 44.866933, "lng": -92.636489, "rev": 60, "bud": 60, "jobber": "https://secure.getjobber.com/clients/136042456", "phone": "7154257138"}, {"id": "snow21", "n": 20, "town": "River Falls", "area": "West side", "cust": "Lois Michealson", "addr": "941 Leroy Ct, River Falls, WI", "notes": "", "price": 60, "unit": "push", "pn": "", "salt": false, "lat": 44.86917, "lng": -92.636549, "rev": 60, "bud": 60, "jobber": "", "phone": ""}, {"id": "snow22", "n": 21, "town": "River Falls", "area": "West side", "cust": "Sharon Waszkurak", "addr": "905 Lucille Ct, River Falls, WI", "notes": "", "price": 60, "unit": "push", "pn": "", "salt": false, "lat": 44.868644, "lng": -92.637777, "rev": 60, "bud": 60, "jobber": "https://secure.getjobber.com/clients/148898834", "phone": "(715) 441-9659"}, {"id": "snow23", "n": 22, "town": "Rural River Falls", "area": "Northeast - County Rd J", "cust": "Christa Hanson", "addr": "1453 County Rd J, River Falls, WI", "notes": "Seasonal contract", "price": 1560, "unit": "season", "pn": "$1,560/season (~$104/visit)", "salt": false, "lat": 44.912357, "lng": -92.506, "rev": 104, "bud": 104, "jobber": "https://secure.getjobber.com/clients/149073978", "phone": "(515) 720-3907"}, {"id": "snow24", "n": 23, "town": "Rural River Falls", "area": "South - County Rd E", "cust": "Christy Engel #1", "addr": "N5624 County Rd E, River Falls, WI", "notes": "Main billing address", "price": 80, "unit": "push", "pn": "", "salt": false, "lat": 44.743905, "lng": -92.638909, "rev": 80, "bud": 80, "jobber": "https://secure.getjobber.com/clients/153005249", "phone": "651-214-2721"}, {"id": "snow25", "n": 24, "town": "Rural River Falls", "area": "South - County Rd E", "cust": "Christy Engel #2", "addr": "N5636 County Rd E, River Falls, WI", "notes": "Might be selling this winter", "price": 60, "unit": "push", "pn": "", "salt": false, "lat": 44.744366, "lng": -92.638981, "rev": 60, "bud": 60, "jobber": "https://secure.getjobber.com/clients/153005249", "phone": "651-214-2721"}, {"id": "snow26", "n": 25, "town": "Prescott", "area": "Prescott", "cust": "Nichole Marie", "addr": "1221 Pearl St, Prescott, WI", "notes": "", "price": 75, "unit": "push", "pn": "", "salt": false, "lat": 44.763323, "lng": -92.801208, "rev": 75, "bud": 75, "jobber": "https://secure.getjobber.com/clients/138888507", "phone": "763-234-2158"}, {"id": "snow27", "n": 26, "town": "Hudson", "area": "Hudson", "cust": "Becky Albus", "addr": "416 Locust St, Hudson, WI", "notes": "", "price": 60, "unit": "push", "pn": "", "salt": false, "lat": 44.975741, "lng": -92.753098, "rev": 60, "bud": 60, "jobber": "https://secure.getjobber.com/clients/136042423", "phone": "651-329-1712"}, {"id": "snow28", "n": 27, "town": "Hudson", "area": "Hudson", "cust": "Dean Knudson", "addr": "705 Monroe St N, Hudson, WI", "notes": "", "price": 60, "unit": "push", "pn": "", "salt": false, "lat": 44.994338, "lng": -92.756014, "rev": 60, "bud": 60, "jobber": "https://secure.getjobber.com/clients/136042441", "phone": "715-222-5741"}, {"id": "snow29", "n": 28, "town": "Hudson", "area": "Hudson", "cust": "Mason Swenson", "addr": "252 123rd Ave, Hudson, WI", "notes": "Farthest north stop", "price": 85, "unit": "push", "pn": "", "salt": false, "lat": 45.040996, "lng": -92.750565, "rev": 85, "bud": 85, "jobber": "https://secure.getjobber.com/clients/147557320", "phone": "(651) 485-7034"}], "mow": [{"id": "mow01", "n": 1, "town": "River Falls", "area": "North / Main St", "cust": "Sabine Furlong", "addr": "300 Troy St, River Falls, WI", "notes": "", "price": 100, "unit": "cut", "pn": "", "salt": false, "lat": 44.870132, "lng": -92.618713, "rev": 100, "bud": 100, "jobber": "https://secure.getjobber.com/clients/136042491", "phone": "715-531-8146"}, {"id": "mow02", "n": 2, "town": "River Falls", "area": "North / Main St", "cust": "FFA Alumni Pull Site", "addr": "141 WI-35, River Falls, WI", "notes": "FFA Alumni Pull Site", "price": 60, "unit": "cut", "pn": "", "salt": false, "lat": 44.884096, "lng": -92.624822, "rev": 60, "bud": 60, "jobber": "", "phone": ""}, {"id": "mow03", "n": 3, "town": "River Falls", "area": "North / Main St", "cust": "American Legion", "addr": "701 N Main St, River Falls, WI", "notes": "", "price": 60, "unit": "cut", "pn": "", "salt": false, "lat": 44.867399, "lng": -92.622338, "rev": 60, "bud": 60, "jobber": "https://secure.getjobber.com/clients/138888455", "phone": "715-410-7937"}, {"id": "mow04", "n": 4, "town": "River Falls", "area": "North / Main St", "cust": "Neil Anderson", "addr": "717 N Main St, River Falls, WI", "notes": "Neil - property 1 of 2", "price": 120, "unit": "cut (2 properties)", "pn": "$120 covers both Neil properties", "salt": false, "lat": 44.869623, "lng": -92.62222, "rev": 120, "bud": 60, "jobber": "https://secure.getjobber.com/clients/139006008", "phone": "715-808-4655"}, {"id": "mow05", "n": 5, "town": "River Falls", "area": "North / Main St", "cust": "Neil Anderson", "addr": "951 E Division St, River Falls, WI", "notes": "Neil - property 2 of 2 (priced above)", "price": 0, "unit": "", "pn": "Included in 2-property price", "salt": false, "lat": 44.864546, "lng": -92.614586, "rev": 0, "bud": 60, "jobber": "https://secure.getjobber.com/clients/139006008", "phone": "715-808-4655"}, {"id": "mow06", "n": 6, "town": "River Falls", "area": "East side", "cust": "Don Davis", "addr": "959 Fairchild Dr, River Falls, WI", "notes": "", "price": 60, "unit": "cut", "pn": "", "salt": false, "lat": 44.867089, "lng": -92.58315, "rev": 60, "bud": 60, "jobber": "https://secure.getjobber.com/clients/138888441", "phone": "715-386-7453"}, {"id": "mow07", "n": 7, "town": "River Falls", "area": "Downtown / South Main", "cust": "Rich Olson (House)", "addr": "306 N Main St, River Falls, WI", "notes": "Advertising swap", "price": 0, "unit": "cut", "pn": "No charge (advertising swap)", "salt": false, "lat": 44.860819, "lng": -92.624445, "rev": 0, "bud": 45, "jobber": "", "phone": ""}, {"id": "mow08", "n": 8, "town": "River Falls", "area": "Southwest", "cust": "Renee Jilek", "addr": "225 Hamilton Dr, River Falls, WI", "notes": "", "price": 60, "unit": "cut", "pn": "", "salt": false, "lat": 44.842982, "lng": -92.632425, "rev": 60, "bud": 60, "jobber": "https://secure.getjobber.com/clients/138888458", "phone": "715-629-7347"}, {"id": "mow09", "n": 9, "town": "River Falls", "area": "West side", "cust": "Kerm Steffenhagen", "addr": "347 Wesley Ct, River Falls, WI", "notes": "", "price": 60, "unit": "cut", "pn": "", "salt": false, "lat": 44.861934, "lng": -92.640615, "rev": 60, "bud": 60, "jobber": "https://secure.getjobber.com/clients/139003492", "phone": "(651) 295-7694"}, {"id": "mow10", "n": 10, "town": "Prescott", "area": "Prescott", "cust": "Nicole Marie", "addr": "1221 Pearl St, Prescott, WI", "notes": "", "price": 65, "unit": "cut", "pn": "", "salt": false, "lat": 44.763323, "lng": -92.801208, "rev": 65, "bud": 65, "jobber": "https://secure.getjobber.com/clients/138888507", "phone": "763-234-2158"}, {"id": "mow11", "n": 11, "town": "Hudson", "area": "Hudson", "cust": "Becky Albus", "addr": "416 Locust St, Hudson, WI", "notes": "", "price": 60, "unit": "cut", "pn": "", "salt": false, "lat": 44.975741, "lng": -92.753098, "rev": 60, "bud": 60, "jobber": "https://secure.getjobber.com/clients/136042423", "phone": "651-329-1712"}, {"id": "mow12", "n": 12, "town": "Hudson", "area": "Hudson", "cust": "Dean Knudson", "addr": "705 Monroe St N, Hudson, WI", "notes": "Dean - 2 properties; add 2nd address", "price": 120, "unit": "cut (2 properties)", "pn": "", "salt": false, "lat": 44.994338, "lng": -92.756014, "rev": 120, "bud": 120, "jobber": "https://secure.getjobber.com/clients/136042441", "phone": "715-222-5741"}]};
+const SHOP={lat:44.8694597,lng:-92.6190377,name:"Shop - 265 Mound View Rd"};
+const TARGETS=[{name:"Troy Burne",lat:44.896626,lng:-92.7408619},{name:"Autumn Blaze Trail",lat:44.9351488,lng:-92.7145788}];
+const DEFAULTS={mowRate:94,snowRate:106,mowStd:11,snowStd:13};
+const LABEL={snow:"Snow route",mow:"Mowing route"};
+let edits={};            // id -> {route, sort, active, data}
+let editing=null;        // id being edited inline
+let dragId=null;
+function derive(price,unit){ price=+price||0; if(unit==="season") return {rev:Math.round(price/15),bud:Math.round(price/15)}; if(unit==="month") return {rev:Math.round(price*5/15),bud:150}; return {rev:price,bud:price||45}; }
+function allStops(r){
+  const base=ROUTES[r].map((st,i)=>({...st,_base:true,_sort:(i+1)*10}));
+  const out=[];
+  for(const b of base){ const e=edits[b.id]; if(e&&e.data&&e.data.removed) continue; const m={...b,...(e?e.data:{})}; m._active=e?e.active!==false:true; if(e&&e.sort!=null) m._sort=e.sort; out.push(m); }
+  for(const [id,e] of Object.entries(edits)){ if(e.route!==r||ROUTES[r].some(b=>b.id===id)||!e.data||e.data.removed) continue; out.push({id,town:"",area:"New accounts",notes:"",pn:"",salt:false,...e.data,_active:e.active!==false,_sort:e.sort!=null?e.sort:9999}); }
+  out.sort((a,b)=>a._sort-b._sort);
+  return out;
+}
+function stopsFor(r){ return allStops(r).filter(x=>x._active).map((x,i)=>({...x,n:i+1})); }
+let view="snow", zoom="rf", settings={...DEFAULTS}, runs={}, ready=false, status="Connecting…";
+const root=()=>document.getElementById("rt-root");
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const money=v=>"$"+Math.round(v).toLocaleString("en-US");
+const hm=min=>{min=Math.max(0,Math.round(min));const h=Math.floor(min/60),m=min%60;return h?`${h}h ${m}m`:`${m}m`;};
+const clock=t=>new Date(t).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});
+const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");};
+const rate=r=>r==="snow"?settings.snowRate:settings.mowRate;
+const std=r=>r==="snow"?settings.snowStd:settings.mowStd;
+const sumBud=r=>stopsFor(r).reduce((a,s)=>a+(s.bud||0),0)||1;
+const budget=(s,r)=>Math.min((s.bud||0)/rate(r)*60, (s.bud||0)/sumBud(r)*std(r)*60);
+const runId=r=>r+"_"+today();
+const getRun=r=>runs[runId(r)]||{route:r,date:today(),startedAt:null,endedAt:null,done:{},by:""};
+let crew=""; try{ crew=localStorage.getItem("rt_crew")||""; }catch(e){}
+
+async function load(){
+  try{
+    const {data,error}=await db.from("route_runs").select("id,route,run_date,data").order("run_date",{ascending:false}).limit(300);
+    if(error) throw error;
+    const next={}; for(const row of data||[]){ if(row.id==="__settings__") settings={...DEFAULTS,...row.data}; else next[row.id]=row.data; }
+    runs=next; ready=true; status="Live - shared with the team";
+    const ea=await db.from("route_accounts").select("id,route,sort,active,data"); if(!ea.error){ const m={}; for(const row of ea.data||[]) m[row.id]={route:row.route,sort:row.sort,active:row.active,data:row.data||{}}; edits=m; }
+  }catch(e){ status="Offline - can't reach the database"; }
+  render();
+}
+async function save(run){
+  const id=run.route+"_"+run.date; run.updatedAt=Date.now(); runs[id]=run; render();
+  try{ const {error}=await db.from("route_runs").upsert({id,route:run.route,run_date:run.date,data:run,updated_at:new Date().toISOString()}); if(error) throw error; status="Live - shared with the team"; }
+  catch(e){ status="Not saved - check connection"; }
+  render();
+}
+async function saveSettings(){
+  try{ const {error}=await db.from("route_runs").upsert({id:"__settings__",route:"config",run_date:null,data:settings,updated_at:new Date().toISOString()}); if(error) throw error; return true; }catch(e){ return false; }
+}
+function start(r){ const run=getRun(r); if(run.startedAt) return; if(!crew){ const n=prompt("Who is running this route?",""); if(n){ crew=n.trim(); try{localStorage.setItem("rt_crew",crew);}catch(e){} } } run.startedAt=Date.now(); run.by=crew; save(run); }
+function done(r,id){ const run=getRun(r); if(!run.startedAt){ run.startedAt=Date.now(); run.by=crew; } run.done={...run.done,[id]:{t:Date.now(),salt:false}}; save(run); }
+function undo(r,id){ const run=getRun(r); const d={...run.done}; delete d[id]; run.done=d; run.endedAt=null; save(run); }
+function salt(r,id,on){ const run=getRun(r); const d={...run.done}; if(d[id]) d[id]={...d[id],salt:on}; run.done=d; save(run); }
+function finish(r){ const run=getRun(r); run.endedAt=Date.now(); save(run); }
+function reset(r){ if(!confirm("Clear today's "+LABEL[r].toLowerCase()+" progress?")) return; save({route:r,date:today(),startedAt:null,endedAt:null,done:{},by:""}); }
+
+function metrics(run){
+  const stops=stopsFor(run.route), r=run.route, dn=run.done||{};
+  const planRev=stops.reduce((a,s)=>a+s.rev,0), planMin=stops.reduce((a,s)=>a+budget(s,r),0);
+  const ds=stops.filter(s=>dn[s.id]);
+  const revDone=ds.reduce((a,s)=>a+s.rev+(dn[s.id].salt?100:0),0), budDone=ds.reduce((a,s)=>a+budget(s,r),0);
+  const ts=Object.values(dn).map(v=>v.t); const lastT=ts.length?Math.max(...ts):null;
+  const workMin=run.startedAt&&lastT?(lastT-run.startedAt)/60000:0;
+  return {planRev,planMin,revDone,budDone,workMin,perHr:workMin>=10?revDone/(workMin/60):0,count:ds.length,total:stops.length,ahead:budDone-workMin,remaining:planMin-budDone};
+}
+function stopTimes(run){ const out={}; const o=Object.entries(run.done||{}).sort((a,b)=>a[1].t-b[1].t); let p=run.startedAt; for(const [id,v] of o){ out[id]=(v.t-(p||v.t))/60000; p=v.t; } return out; }
+const gmaps=a=>"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(a);
+function navLink(st){ const a=st.map(s=>s.addr); const wp=a.slice(0,-1).slice(0,9); return "https://www.google.com/maps/dir/?api=1&travelmode=driving&destination="+encodeURIComponent(a[a.length-1])+(wp.length?"&waypoints="+encodeURIComponent(wp.join("|")):""); }
+function dist(a,b){ const R=3958.8,t=Math.PI/180,dl=(b.lat-a.lat)*t,dn=(b.lng-a.lng)*t; const h=Math.sin(dl/2)**2+Math.cos(a.lat*t)*Math.cos(b.lat*t)*Math.sin(dn/2)**2; return 2*R*Math.asin(Math.sqrt(h)); }
+function star(cx,cy,R,r){ let p=[]; for(let i=0;i<10;i++){const a=Math.PI/5*i-Math.PI/2,rr=i%2?r:R;p.push((cx+rr*Math.cos(a)).toFixed(1)+","+(cy+rr*Math.sin(a)).toFixed(1));} return p.join(" "); }
+function mapSVG(r,run){
+  const stops=stopsFor(r).filter(x=>x.lat&&x.lng), k=Math.cos(44.9*Math.PI/180), col0=r==="snow"?"#4A9BE8":"#5CB800";
+  let pts=stops.slice(); if(zoom==="rf") pts=pts.filter(s=>dist(s,SHOP)<=3.5);
+  const showT=zoom==="all", all=[...pts,SHOP,...(showT?TARGETS:[])];
+  let x0=Math.min(...all.map(p=>p.lng*k)),x1=Math.max(...all.map(p=>p.lng*k)),y0=Math.min(...all.map(p=>p.lat)),y1=Math.max(...all.map(p=>p.lat));
+  const px=(x1-x0)*.08+.002,py=(y1-y0)*.08+.002; x0-=px;x1+=px;y0-=py;y1+=py;
+  const W=600,H=Math.max(300,Math.min(520,Math.round(W*(y1-y0)/(x1-x0))));
+  const X=p=>((p.lng*k-x0)/(x1-x0))*W, Y=p=>H-((p.lat-y0)/(y1-y0))*H;
+  const next=stops.find(s=>!run.done[s.id]); const seq=pts.slice().sort((a,b)=>a.n-b.n);
+  let g=seq.length?`<polyline points="${[SHOP,...seq].map(p=>X(p).toFixed(1)+","+Y(p).toFixed(1)).join(" ")}" fill="none" stroke="${col0}" stroke-opacity=".35" stroke-width="3" stroke-dasharray="6 6"/>`:"";
+  if(showT) for(const t of TARGETS) g+=`<circle cx="${X(t)}" cy="${Y(t)}" r="24" fill="#FFB800" fill-opacity=".18" stroke="#FFB800" stroke-dasharray="5 4"/><text x="${X(t)}" y="${Y(t)-30}" text-anchor="middle" font-size="15" font-weight="700" fill="#FFB800">${esc(t.name)} (target)</text>`;
+  const seen={};
+  for(const s of seq){ const key=s.lat+","+s.lng, off=(seen[key]=(seen[key]||0)+1)-1, cx=X(s)+off*16, cy=Y(s);
+    const c=run.done[s.id]?"#4A5E58":(next&&next.id===s.id?"#FF8A1F":col0);
+    g+=`<g><circle cx="${cx}" cy="${cy}" r="13" fill="${c}" stroke="#060808" stroke-width="2"/><text x="${cx}" y="${cy+5}" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">${s.n}</text><title>${esc(s.n+". "+s.cust+" - "+s.addr)}</title></g>`; }
+  g+=`<polygon points="${star(X(SHOP),Y(SHOP),16,7)}" fill="#FF4444" stroke="#000"/>`;
+  const hid=stops.length-pts.length;
+  return `<svg class="rt-map" viewBox="0 0 ${W} ${H}">${g}</svg>`+(hid?`<div class="rt-note">${hid} out-of-town stop${hid>1?"s":""} hidden - tap "All stops".</div>`:"");
+}
+function routeView(r){
+  const run=getRun(r), m=metrics(run), times=stopTimes(run), stops=stopsFor(r), next=stops.find(s=>!run.done[s.id]), started=!!run.startedAt;
+  const proj=started?Date.now()+Math.max(0,m.remaining)*60000:null;
+  let h=`<div class="rt-kpis">
+   <div class="rt-k"><b>${m.count}/${m.total}</b><span>Stops done</span></div>
+   <div class="rt-k"><b>${money(m.planRev)}</b><span>Revenue per ${r==="snow"?"storm":"round"}</span></div>
+   <div class="rt-k"><b>${money(rate(r))}/hr</b><span>Target pace</span></div>
+   <div class="rt-k"><b>${hm(m.planMin)}</b><span>Time budget</span></div>
+   ${started?`<div class="rt-k ${m.perHr?(m.perHr>=rate(r)?"ok":"bad"):""}"><b>${m.perHr?money(m.perHr)+"/hr":"-"}</b><span>Actual pace</span></div>
+   <div class="rt-k ${m.ahead>=0?"ok":"bad"}"><b>${hm(Math.abs(m.ahead))}</b><span>${m.ahead>=0?"Ahead of":"Behind"} budget</span></div>
+   <div class="rt-k"><b>${money(m.revDone)}</b><span>Revenue done</span></div>
+   <div class="rt-k amb"><b>${run.endedAt?clock(run.endedAt):clock(proj)}</b><span>${run.endedAt?"Finished":"Projected finish"}</span></div>`:""}</div>
+   <div class="rt-bar"><i style="width:${m.total?Math.round(m.count/m.total*100):0}%"></i></div>
+   <div class="rt-run">${!started?`<button class="rt-btn big" data-a="start">▶ Start ${LABEL[r].toLowerCase()}</button><span class="rt-note">Tap DONE at each stop. Stop time counts from the last stop, drive included.</span>`:
+     run.endedAt?`<span class="rt-note">Finished ${clock(run.endedAt)} · started ${clock(run.startedAt)}${run.by?` · ${esc(run.by)}`:""}</span><button class="rt-btn ghost" data-a="reset">Reset today</button>`:
+     `<span class="rt-note">Started ${clock(run.startedAt)}${run.by?` by ${esc(run.by)}`:""}${next?` · next: <b>${esc(next.cust)}</b> (${Math.round(budget(next,r))} min)`:""}</span><button class="rt-btn ghost" data-a="finish">Finish route</button><button class="rt-btn ghost" data-a="reset">Reset today</button>`}</div>`;
+  const groups=[]; for(const s of stops){ const k=s.town+" - "+s.area; let g=groups.find(x=>x.k===k); if(!g){g={k,stops:[]};groups.push(g);} g.stops.push(s); }
+  h+=`<div class="rt-cols"><div>`;
+  for(const g of groups){
+    h+=`<div class="rt-area"><div class="rt-ah"><span>${esc(g.k)}</span><a href="${navLink(g.stops)}" target="_blank" rel="noopener">Navigate ↗</a></div>
+      <div class="rt-note">${g.stops.length} stops · ${money(g.stops.reduce((a,s)=>a+s.rev,0))} · budget ${hm(g.stops.reduce((a,s)=>a+budget(s,r),0))}</div>`;
+    for(const s of g.stops){ const d=run.done[s.id], b=budget(s,r), took=times[s.id];
+      h+=`<div class="rt-stop ${d?"done":(next&&next.id===s.id?"next":"")}"><div class="rt-n">${s.n}</div>
+        <div><div class="rt-who">${esc(s.cust)}</div><a class="rt-addr" href="${gmaps(s.addr)}" target="_blank" rel="noopener">${esc(String(s.addr||"").replace(", WI",""))}</a>${s.phone?` · <a class="rt-addr" href="tel:${esc(String(s.phone).replace(/[^0-9+]/g,""))}">Call</a>`:""}${s.jobber?` · <a class="rt-addr" href="${esc(s.jobber)}" target="_blank" rel="noopener">Jobber ↗</a>`:""}
+        <div class="rt-note"><b>${s.pn?esc(s.pn):money(s.price)+" "+esc(s.unit)}</b>${s.notes?" · "+esc(s.notes):""} · budget <b>${Math.round(b)} min</b></div></div>
+        <div class="rt-act">${d?`<div class="rt-took ${took>b?"bad":"ok"}">${Math.round(took)} min</div><div class="rt-note">${clock(d.t)}</div>
+          ${s.salt?`<label class="rt-salt"><input type="checkbox" data-salt="${s.id}" ${d.salt?"checked":""}> Salt +$100</label>`:""}<button class="rt-btn ghost sm" data-undo="${s.id}">Undo</button>`:
+          `<button class="rt-btn" data-done="${s.id}">DONE</button>`}</div></div>`; }
+    h+=`</div>`; }
+  h+=`</div><div><div class="rt-mapbox"><div class="rt-ah"><span>Route map</span><span class="rt-seg"><button data-z="rf" class="${zoom==="rf"?"on":""}">River Falls</button><button data-z="all" class="${zoom==="all"?"on":""}">All stops</button></span></div>${mapSVG(r,run)}
+    <div class="rt-legend"><span><i style="background:${r==="snow"?"#4A9BE8":"#5CB800"}"></i>To do</span><span><i style="background:#FF8A1F"></i>Next</span><span><i style="background:#4A5E58"></i>Done</span><span><i style="background:#FF4444"></i>Shop</span></div></div></div></div>`;
+  return h;
+}
+
+async function saveEdit(id,route,patch){ const cur=edits[id]||{route,sort:null,active:true,data:{}}; const row={...cur,...patch,data:{...cur.data,...(patch.data||{})}}; edits[id]=row; render();
+  try{ const {error}=await db.from("route_accounts").upsert({id,route:row.route,sort:row.sort,active:row.active,data:row.data,updated_at:new Date().toISOString()}); if(error) throw error; status="Saved - shared with the team"; }catch(e){ status="Not saved - check connection"; } render(); }
+async function saveOrder(r,ids){ const rows=ids.map((id,i)=>{ const cur=edits[id]||{route:r,active:true,data:{}}; edits[id]={...cur,route:r,sort:(i+1)*10}; return {id,route:r,sort:(i+1)*10,active:edits[id].active!==false,data:edits[id].data||{},updated_at:new Date().toISOString()}; });
+  render(); try{ const {error}=await db.from("route_accounts").upsert(rows); if(error) throw error; status="Route order saved"; }catch(e){ status="Order not saved - check connection"; } render(); }
+function move(r,id,dir){ const ids=allStops(r).map(x=>x.id); const i=ids.indexOf(id), j=i+dir; if(i<0||j<0||j>=ids.length) return; [ids[i],ids[j]]=[ids[j],ids[i]]; saveOrder(r,ids); }
+async function geocode(addr){ try{ const res=await fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&q="+encodeURIComponent(addr)); const j=await res.json(); if(j&&j[0]) return {lat:+j[0].lat,lng:+j[0].lon}; }catch(e){} return {}; }
+function editView(r){
+  const list=allStops(r); const areas=[...new Set(list.map(x=>x.town&&x.area?x.town+" - "+x.area:"").filter(Boolean))];
+  let h=`<div class="rt-note" style="margin-bottom:10px">Drag stops to reorder (or use ▲▼ on a phone). Pause takes a stop off the route but keeps it; Remove deletes it from the route. Changes save for the whole team instantly. Customer details and billing stay in Jobber.</div><div class="rt-area" id="rt-edit-list">`;
+  list.forEach((st,i)=>{ const isE=editing===st.id;
+    h+=`<div class="rt-erow ${st._active?"":"paused"}" draggable="true" data-drag="${st.id}"><span class="rt-grip" title="Drag to reorder">⠿</span><span class="rt-n">${i+1}</span>
+      <div class="rt-einfo"><div class="rt-who">${esc(st.cust)}${st._active?"":' <span class="rt-tag">PAUSED</span>'}</div><div class="rt-note">${esc(String(st.addr||"").replace(", WI",""))} · <b>${money(st.price||0)} ${esc(st.unit||"")}</b>${st.jobber?` · <a class="rt-addr" href="${esc(st.jobber)}" target="_blank" rel="noopener">Jobber ↗</a>`:""}</div>
+      ${isE?`<div class="rt-eform"><label>Price<input type="number" id="rt-e-price" value="${st.price||0}"></label><label>Unit<select id="rt-e-unit">${["push","push + salt","cut","cut (2 properties)","season","month"].map(u=>`<option ${u===(st.unit||"")?"selected":""}>${u}</option>`).join("")}</select></label><label style="flex:1;min-width:180px">Notes<input type="text" id="rt-e-notes" value="${esc(st.notes||"")}"></label><button class="rt-btn sm" data-esave="${st.id}">Save</button><button class="rt-btn ghost sm" data-ecancel="1">Cancel</button></div>`:""}</div>
+      <div class="rt-ebtns"><button class="rt-btn ghost sm" data-up="${st.id}" ${i===0?"disabled":""}>▲</button><button class="rt-btn ghost sm" data-down="${st.id}" ${i===list.length-1?"disabled":""}>▼</button>
+        <button class="rt-btn ghost sm" data-edit="${st.id}">Edit</button><button class="rt-btn ghost sm" data-pause="${st.id}">${st._active?"Pause":"Resume"}</button><button class="rt-btn ghost sm danger" data-remove="${st.id}">Remove</button></div></div>`; });
+  h+=`</div><div class="rt-area"><div class="rt-ah"><span>Add an account to the ${LABEL[r].toLowerCase()}</span></div>
+    <div class="rt-eform"><label style="min-width:180px">Customer name<input type="text" id="rt-n-name"></label><label style="flex:1;min-width:220px">Address (street, town)<input type="text" id="rt-n-addr" placeholder="123 Main St, River Falls"></label>
+    <label>Price<input type="number" id="rt-n-price" value="60"></label><label>Unit<select id="rt-n-unit">${(r==="snow"?["push","push + salt","season","month"]:["cut","cut (2 properties)"]).map(u=>`<option>${u}</option>`).join("")}</select></label>
+    <label style="min-width:200px">Area<select id="rt-n-area"><option value="">New accounts</option>${areas.map(a=>`<option>${esc(a)}</option>`).join("")}</select></label>
+    <label style="flex:1;min-width:180px">Notes<input type="text" id="rt-n-notes"></label><label style="min-width:220px">Jobber link (optional)<input type="text" id="rt-n-jobber" placeholder="https://secure.getjobber.com/clients/..."></label>
+    <button class="rt-btn" data-a="add">+ Add to route</button><span class="rt-note" id="rt-n-msg"></span></div></div>`;
+  return h;
+}
+function historyView(){
+  const list=Object.values(runs).filter(x=>x&&x.startedAt).sort((a,b)=>(b.date+b.route).localeCompare(a.date+a.route));
+  if(!list.length) return `<div class="rt-note" style="padding:12px 0">No routes logged yet. Start a route and tap DONE at each stop - every run lands here with its pace for the L10 scorecard.</div>`;
+  let h=`<div class="rt-tw"><table class="rt-t"><tr><th>Date</th><th>Route</th><th>Crew</th><th>Stops</th><th>Revenue</th><th>Time</th><th>$/hr</th><th>vs target</th></tr>`;
+  for(const run of list){ const m=metrics(run), d=m.perHr-rate(run.route);
+    h+=`<tr><td>${esc(run.date)}</td><td>${LABEL[run.route]}</td><td>${esc(run.by||"")}</td><td>${m.count}/${m.total}</td><td>${money(m.revDone)}</td><td>${hm(m.workMin)}</td><td>${m.perHr?money(m.perHr):"-"}</td><td class="${d>=0?"ok":"bad"}">${m.perHr?(d>=0?"+":"-")+money(Math.abs(d)):"-"}</td></tr>`; }
+  return h+`</table></div>`;
+}
+function settingsView(){
+  return `<div class="rt-set"><label>Mowing target $/hr<input type="number" id="rt-mr" value="${settings.mowRate}"></label><label>Snow target $/hr<input type="number" id="rt-sr" value="${settings.snowRate}"></label>
+   <label>Standard hours - mowing route<input type="number" step="0.5" id="rt-ms" value="${settings.mowStd}"></label><label>Standard hours - snow route<input type="number" step="0.5" id="rt-ss" value="${settings.snowStd}"></label>
+   <label>This device's crew name<input type="text" id="rt-crew" value="${esc(crew)}"></label><button class="rt-btn" data-a="savet">Save</button><span class="rt-note" id="rt-msg"></span></div>
+   <div class="rt-note">Each stop's time budget is the tighter of the target pace or the standard route hours, split by stop size. Targets come from the KPI Model (break-even + 25%).</div>`;
+}
+function render(){
+  const el=root(); if(!el) return;
+  const tabs=[["snow","❄️ Snow route"],["mow","🌱 Mowing route"],["esnow","✏️ Edit snow"],["emow","✏️ Edit mowing"],["hist","📋 History"],["set","🎯 Targets"]];
+  el.innerHTML=`<div class="rt-head"><div class="sec-title" style="margin:0">🚚 Lawn & Snow Routes</div><span class="rt-status">${esc(status)}</span></div>
+   <div class="rt-tabs">${tabs.map(([k,l])=>`<button data-v="${k}" class="${view===k?"on":""}">${l}</button>`).join("")}</div>`+
+   (view==="hist"?historyView():view==="set"?settingsView():view==="esnow"?editView("snow"):view==="emow"?editView("mow"):routeView(view));
+}
+document.addEventListener("click",async e=>{
+  const el=root(); if(!el||!el.contains(e.target)) return; const t=e.target.closest("button"); if(!t) return;
+  if(t.dataset.v){ view=t.dataset.v; render(); return; } if(t.dataset.z){ zoom=t.dataset.z; render(); return; }
+  const er=view==="esnow"?"snow":view==="emow"?"mow":null;
+  if(er){
+    if(t.dataset.up) return move(er,t.dataset.up,-1); if(t.dataset.down) return move(er,t.dataset.down,1);
+    if(t.dataset.edit){ editing=t.dataset.edit; render(); return; } if(t.dataset.ecancel){ editing=null; render(); return; }
+    if(t.dataset.esave){ const id=t.dataset.esave, price=+document.getElementById("rt-e-price").value, unit=document.getElementById("rt-e-unit").value, notes=document.getElementById("rt-e-notes").value.trim();
+      editing=null; return saveEdit(id,er,{data:{price,unit,notes,pn:"",...derive(price,unit)}}); }
+    if(t.dataset.pause){ const id=t.dataset.pause, st=allStops(er).find(x=>x.id===id); return saveEdit(id,er,{active:!st._active}); }
+    if(t.dataset.remove){ const id=t.dataset.remove, st=allStops(er).find(x=>x.id===id); if(!confirm("Remove "+st.cust+" from the "+LABEL[er].toLowerCase()+"?")) return; return saveEdit(id,er,{active:false,data:{removed:true}}); }
+    if(t.dataset.a==="add"){ const name=document.getElementById("rt-n-name").value.trim(), addr=document.getElementById("rt-n-addr").value.trim(), price=+document.getElementById("rt-n-price").value, unit=document.getElementById("rt-n-unit").value,
+        areaSel=document.getElementById("rt-n-area").value, notes=document.getElementById("rt-n-notes").value.trim(), jobber=document.getElementById("rt-n-jobber").value.trim(), msg=document.getElementById("rt-n-msg");
+      if(!name||!addr){ msg.textContent="Add a name and address."; return; } msg.textContent="Finding address…";
+      const full=/WI|Wisconsin/i.test(addr)?addr:addr+", WI"; const g=await geocode(full);
+      const [town,area]=areaSel?areaSel.split(" - "):[(full.split(",")[1]||"").trim()||"New",""];
+      const id="new_"+er+"_"+Date.now(); const list=allStops(er); const sort=(list.length?Math.max(...list.map(x=>x._sort)):0)+10;
+      await saveEdit(id,er,{route:er,sort,active:true,data:{cust:name,addr:full,price,unit,notes,pn:"",salt:/salt/.test(unit),town:town||"New",area:area||"New accounts",jobber,...derive(price,unit),...g}});
+      return; }
+  }
+  if(t.dataset.done) return done(view,t.dataset.done); if(t.dataset.undo) return undo(view,t.dataset.undo);
+  const a=t.dataset.a; if(a==="start") start(view); if(a==="finish") finish(view); if(a==="reset") reset(view);
+  if(a==="savet"){ const v=id=>+document.getElementById(id).value; const s={mowRate:v("rt-mr"),snowRate:v("rt-sr"),mowStd:v("rt-ms"),snowStd:v("rt-ss")};
+    if(Object.values(s).every(x=>x>0)){ settings=s; crew=document.getElementById("rt-crew").value.trim(); try{localStorage.setItem("rt_crew",crew);}catch(e){}
+      saveSettings().then(ok=>{ const m=document.getElementById("rt-msg"); if(m) m.textContent=ok?"Saved for the whole team.":"Couldn't save - check connection."; }); } }
+});
+document.addEventListener("change",e=>{ const el=root(); if(!el||!el.contains(e.target)) return; const s=e.target.dataset&&e.target.dataset.salt; if(s) salt(view,s,e.target.checked); });
+document.addEventListener("dragstart",e=>{ const el=root(); if(!el||!el.contains(e.target)) return; const row=e.target.closest("[data-drag]"); if(!row) return; dragId=row.dataset.drag; row.classList.add("dragging"); try{e.dataTransfer.effectAllowed="move"; e.dataTransfer.setData("text/plain",dragId);}catch(_){} });
+document.addEventListener("dragover",e=>{ const el=root(); if(!el||!el.contains(e.target)||!dragId) return; const row=e.target.closest("[data-drag]"); if(!row) return; e.preventDefault(); el.querySelectorAll(".rt-erow.over").forEach(x=>x.classList.remove("over")); row.classList.add("over"); });
+document.addEventListener("drop",e=>{ const el=root(); if(!el||!el.contains(e.target)||!dragId) return; e.preventDefault(); const row=e.target.closest("[data-drag]"); const r=view==="esnow"?"snow":view==="emow"?"mow":null; if(!row||!r){ dragId=null; return; }
+  const ids=allStops(r).map(x=>x.id); const from=ids.indexOf(dragId), to=ids.indexOf(row.dataset.drag); dragId=null; if(from<0||to<0||from===to){ render(); return; } const [m]=ids.splice(from,1); ids.splice(to,0,m); saveOrder(r,ids); });
+document.addEventListener("dragend",()=>{ dragId=null; const el=root(); if(el) el.querySelectorAll(".dragging,.over").forEach(x=>x.classList.remove("dragging","over")); });
+function boot(){ render(); load();
+  try{ db.channel("route_runs_live").on("postgres_changes",{event:"*",schema:"public",table:"route_runs"},()=>load()).on("postgres_changes",{event:"*",schema:"public",table:"route_accounts"},()=>{ if(!editing) load(); }).subscribe(); }catch(e){}
+  setInterval(()=>{ const p=document.getElementById("panel-routes"); if(p&&p.classList.contains("active")) load(); },30000); }
+if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",boot); else boot();
+})();
+
+</script>
+</body>
+</html>
